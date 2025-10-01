@@ -6,19 +6,26 @@ Chrome WebDriver를 사용한 Dart 웹 애플리케이션 integration test 프�
 
 ```
 dart-web-integration-test/
-├── lib/                          # 핵심 라이브러리
+├── lib/                          # 핵심 라이브러리 (Selenium 방식)
 │   ├── chrome_driver_manager.dart # ChromeDriver 관리
 │   ├── test_dsl_parser.dart       # JSON 테스트 DSL 파서
 │   └── test_executor.dart         # 테스트 실행 엔진
 ├── bin/                          # 실행 파일
-│   └── run_tests.dart            # 메인 테스트 실행기
+│   ├── run_tests.dart            # Selenium 테스트 실행기
+│   └── run_flutter_tests.dart    # Flutter Integration 테스트 실행기
 ├── test-dsl/                     # 테스트 DSL JSON 파일들
-│   └── sample_test.json          # 샘플 테스트 케이스
-├── test_target/                  # 테스트 대상 Flutter 웹 앱
+│   ├── sample_test.json          # 샘플 테스트 케이스
+│   └── failing_test.json         # 실패 테스트 (스크린샷 데모용)
+├── integration_test/             # Flutter Integration Test 러너
+│   └── dsl_runner.dart           # JSON DSL을 Flutter 테스트로 변환
+├── test_driver/                  # Flutter Driver
+│   └── integration_test.dart     # Integration test driver
+├── test_target/                  # 테스트 대상 Flutter 웹 앱 (독립적)
 │   ├── lib/main.dart            # Flutter 앱 메인 파일
 │   ├── pubspec.yaml             # Flutter 프로젝트 설정
 │   └── web/                     # 웹 빌드 파일들
 ├── drivers/                      # ChromeDriver 실행 파일 저장소
+├── screenshots/                  # 테스트 실패 시 스크린샷 저장소
 ├── config/                       # 설정 파일들
 │   └── chromedriver_config.json  # ChromeDriver 설정
 └── test/                         # 단위 테스트
@@ -41,10 +48,27 @@ cd test_target
 flutter run -d chrome --web-port 3001
 ```
 
+**참고**: 최신 Flutter는 자동으로 CanvasKit 렌더러를 사용합니다. 테스트 프레임워크는 자동으로 접근성을 활성화하여 Selenium이 요소를 찾을 수 있도록 합니다.
+
 ## 사용법
 
 ### 테스트 실행
+
+Flutter의 CanvasKit 렌더러는 Canvas로 렌더링하므로 Selenium WebDriver로 DOM 요소를 찾을 수 없습니다. 따라서 Flutter Integration Test를 사용합니다:
+
 ```bash
+# Flutter Integration Test 실행 (권장)
+dart run bin/run_flutter_tests.dart test-dsl/sample_test.json
+
+# 다른 Flutter 앱 테스트 (런타임에 클론된 앱 등)
+dart run bin/run_flutter_tests.dart test-dsl/sample_test.json /path/to/flutter/app
+```
+
+**참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리가 자동으로 대상 앱에 복사되고, 테스트 완료 후 삭제됩니다.
+
+**Selenium 방식 (참고용 - CanvasKit에서는 작동하지 않음)**
+```bash
+# Selenium 기반 테스트 (HTML 렌더러에서만 작동)
 dart run bin/run_tests.dart test-dsl/sample_test.json
 ```
 
@@ -81,6 +105,17 @@ dart run bin/run_tests.dart test-dsl/sample_test.json
 - `assert_text`: 텍스트 내용 검증
 - `assert_visible`: 요소 가시성 검증
 - `navigate`: 페이지 이동
+
+## 스크린샷 기능
+
+### 테스트 실패 시 자동 스크린샷
+- 테스트가 실패하면 자동으로 `screenshots/` 디렉토리에 스크린샷이 저장됩니다
+- 파일명 형식: `{timestamp}_{testcase}_{step}.png`
+- 실패한 단계와 전체 테스트 실패 시점의 스크린샷을 촬영합니다
+
+### 설정 옵션
+- `captureScreenshotsOnFailure`: 실패 시 스크린샷 촬영 (기본값: true)
+- `captureStepScreenshots`: 모든 단계별 스크린샷 촬영 (기본값: false)
 
 ## 개발
 

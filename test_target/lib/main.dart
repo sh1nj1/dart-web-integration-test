@@ -49,13 +49,17 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
-      body: const Center(
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'Welcome to Test Target',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            Semantics(
+              label: 'Welcome to Test Target',
+              header: true,
+              child: Text(
+                'Welcome to Test Target',
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              ),
             ),
             SizedBox(height: 20),
             Text(
@@ -94,13 +98,17 @@ class AboutPage extends StatelessWidget {
           ),
         ],
       ),
-      body: const Center(
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'About Us',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            Semantics(
+              label: 'About Us',
+              header: true,
+              child: Text(
+                'About Us',
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              ),
             ),
             SizedBox(height: 20),
             Text(

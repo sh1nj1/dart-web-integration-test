@@ -25,7 +25,15 @@ void main(List<String> args) async {
     print('Executing test suite: ${testSuite.name}');
     print('Base URL: ${testSuite.baseUrl}');
     
-    final executor = TestExecutor(driver);
+    final executor = TestExecutor(
+      driver,
+      captureScreenshotsOnFailure: true,
+      captureStepScreenshots: false, // 필요시 true로 변경하여 모든 단계 스크린샷 촬영
+    );
+    
+    // Initialize executor (set implicit wait)
+    await executor.initialize();
+    
     int passed = 0;
     int failed = 0;
     

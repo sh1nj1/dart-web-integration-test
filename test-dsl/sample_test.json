@@ -13,7 +13,7 @@
         },
         {
           "action": "assert_text",
-          "selector": "h1",
+          "selector": "flt-semantics[aria-label='Welcome to Test Target']",
           "expected": "Welcome to Test Target"
         },
         {
@@ -26,7 +26,7 @@
         },
         {
           "action": "assert_text",
-          "selector": "h1",
+          "selector": "flt-semantics[aria-label='About Us']",
           "expected": "About Us"
         }
       ]
@@ -42,30 +42,39 @@
         },
         {
           "action": "type",
-          "selector": "input[aria-label='Your Name']",
+          "selector": "input",
           "value": "Test User"
         },
         {
-          "action": "type",
-          "selector": "input[aria-label='Your Email']",
-          "value": "test@example.com"
+          "action": "wait",
+          "waitTime": 500
         },
         {
           "action": "type",
-          "selector": "textarea[aria-label='Your Message']",
+          "selector": "input[type='email']",
+          "value": "test@example.com"
+        },
+        {
+          "action": "wait",
+          "waitTime": 500
+        },
+        {
+          "action": "type",
+          "selector": "textarea",
           "value": "This is a test message from integration test"
         },
         {
           "action": "click",
-          "selector": "button[data-semantics-role='button']"
+          "selector": "flt-semantics[role='button']:contains('Send Message')"
         },
         {
           "action": "wait",
           "waitTime": 2000
         },
         {
-          "action": "assert_visible",
-          "selector": "flt-semantics[aria-label*='Thank you']"
+          "action": "assert_text",
+          "selector": "flt-semantics[aria-label='Thank you! Your message has been sent.']",
+          "expected": "Thank you! Your message has been sent."
         }
       ]
     }
