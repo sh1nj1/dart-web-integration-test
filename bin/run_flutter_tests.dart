@@ -15,10 +15,11 @@ void main(List<String> args) async {
   print('Target app directory: $targetAppDir');
 
   try {
-    // Copy test infrastructure to target app directory
-    print('Copying test infrastructure...');
-    await _copyDirectory('./test_driver', '$targetAppDir/test_driver');
-    await _copyDirectory('./integration_test', '$targetAppDir/integration_test');
+    // Create symlinks instead of copying files (keeps target app clean)
+    print('Creating test infrastructure symlinks...');
+    final currentDir = Directory.current.absolute.path;
+    await _createSymlink('$currentDir/test_driver', '$targetAppDir/test_driver');
+    await _createSymlink('$currentDir/integration_test', '$targetAppDir/integration_test');
     
     // Check if app_config.dart exists, if not create from template
     final appConfigFile = File('$targetAppDir/integration_test/app_config.dart');
@@ -80,10 +81,10 @@ void main(List<String> args) async {
     // Kill any remaining Chrome processes
     await _killChromeProcesses();
     
-    // Clean up before exiting
+    // Clean up symlinks and generated files
     print('\nCleaning up test infrastructure...');
-    await _deleteDirectory('$targetAppDir/test_driver');
-    await _deleteDirectory('$targetAppDir/integration_test');
+    await _deleteSymlink('$targetAppDir/test_driver');
+    await _deleteSymlink('$targetAppDir/integration_test');
     
     print('Done!');
     
@@ -92,38 +93,40 @@ void main(List<String> args) async {
   } catch (e) {
     print('Error: $e');
     // Clean up on error
-    await _deleteDirectory('$targetAppDir/test_driver');
-    await _deleteDirectory('$targetAppDir/integration_test');
+    await _deleteSymlink('$targetAppDir/test_driver');
+    await _deleteSymlink('$targetAppDir/integration_test');
     exit(1);
   }
 }
 
-Future<void> _copyDirectory(String source, String destination) async {
+Future<void> _createSymlink(String source, String destination) async {
   final sourceDir = Directory(source);
-  final destDir = Directory(destination);
-
+  
   if (!await sourceDir.exists()) {
     throw Exception('Source directory does not exist: $source');
   }
 
-  // Create destination directory
-  await destDir.create(recursive: true);
-
-  // Copy all files
-  await for (final entity in sourceDir.list(recursive: true)) {
-    if (entity is File) {
-      final relativePath = entity.path.substring(sourceDir.path.length);
-      final newPath = destination + relativePath;
-      await Directory(newPath.substring(0, newPath.lastIndexOf('/'))).create(recursive: true);
-      await entity.copy(newPath);
-    }
+  final link = Link(destination);
+  
+  // Remove existing link or directory if it exists
+  if (await link.exists()) {
+    await link.delete();
+  } else if (await Directory(destination).exists()) {
+    await Directory(destination).delete(recursive: true);
   }
+
+  // Create symlink
+  await link.create(source);
 }
 
-Future<void> _deleteDirectory(String path) async {
-  final dir = Directory(path);
-  if (await dir.exists()) {
-    await dir.delete(recursive: true);
+Future<void> _deleteSymlink(String path) async {
+  final link = Link(path);
+  
+  if (await link.exists()) {
+    await link.delete();
+  } else if (await Directory(path).exists()) {
+    // Fallback: if it's a directory (not a symlink), delete it
+    await Directory(path).delete(recursive: true);
   }
 }
 

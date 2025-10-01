@@ -64,7 +64,7 @@ dart run bin/run_flutter_tests.dart test-dsl/sample_test.json
 dart run bin/run_flutter_tests.dart test-dsl/sample_test.json /path/to/flutter/app
 ```
 
-**참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리가 자동으로 대상 앱에 복사되고, 테스트 완료 후 삭제됩니다.
+**참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리에 대한 심볼릭 링크가 생성되고, 테스트 완료 후 자동으로 삭제됩니다. 실제 파일은 복사되지 않아 대상 앱을 깨끗하게 유지합니다.
 
 ### 다른 Flutter 앱에서 사용하기
 
