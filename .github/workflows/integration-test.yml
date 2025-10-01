@@ -53,13 +53,25 @@ jobs:
           echo "ChromeDriver linked to: $CHROMEDRIVER_PATH"
         fi
         
-        # Set Chrome path for Flutter and create symlink
+        # Set Chrome path for Flutter and create wrapper for CI
         CHROME_EXECUTABLE=$(find chrome -type f -name "chrome" | head -1)
         echo "CHROME_EXECUTABLE=$(pwd)/$CHROME_EXECUTABLE" >> $GITHUB_ENV
         
+        # Create Chrome wrapper script with --no-sandbox for CI
+        cat > /tmp/chrome-wrapper.sh << 'EOF'
+        #!/bin/bash
+        exec "$(dirname "$0")/chrome-real" --no-sandbox --disable-dev-shm-usage "$@"
+        EOF
+        chmod +x /tmp/chrome-wrapper.sh
+        
+        # Move real Chrome and replace with wrapper
+        mv "$(pwd)/$CHROME_EXECUTABLE" "$(dirname "$(pwd)/$CHROME_EXECUTABLE")/chrome-real"
+        cp /tmp/chrome-wrapper.sh "$(pwd)/$CHROME_EXECUTABLE"
+        chmod +x "$(pwd)/$CHROME_EXECUTABLE"
+        
         # Create google-chrome symlink in PATH
         sudo ln -sf "$(pwd)/$CHROME_EXECUTABLE" /usr/local/bin/google-chrome
-        google-chrome --version
+        google-chrome --version || echo "Chrome wrapper created"
     
     - name: Verify Chrome and ChromeDriver installation
       run: |
