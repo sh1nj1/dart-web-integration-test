@@ -35,42 +35,69 @@ void main() {
       await config.startApp(tester);
 
       final testCases = testSuite['testCases'] as List;
+      int passed = 0;
+      int failed = 0;
+      final failedTests = <String>[];
 
       for (final testCase in testCases) {
         print('\nExecuting test case: ${testCase['name']}');
         
-        // Navigate to URL if specified by clicking the navigation button
-        if (testCase['url'] != null) {
-          final url = testCase['url'] as String;
-          final route = _extractRoute(url);
-          if (route.isNotEmpty && route != '/') {
-            // Navigate by clicking the appropriate button
-            await _navigateToRoute(tester, route);
-            await tester.pumpAndSettle();
+        try {
+          // Navigate to URL if specified by clicking the navigation button
+          if (testCase['url'] != null) {
+            final url = testCase['url'] as String;
+            final route = _extractRoute(url);
+            if (route.isNotEmpty && route != '/') {
+              // Navigate by clicking the appropriate button
+              await _navigateToRoute(tester, route);
+              await tester.pumpAndSettle();
+            }
           }
-        }
 
-        // Execute steps
-        final steps = testCase['steps'] as List;
-        for (int i = 0; i < steps.length; i++) {
-          final step = steps[i];
-          print('  Executing step ${i + 1}: ${step['action']}');
-          
-          try {
-            await _executeStep(tester, step);
-          } catch (e) {
-            // Capture screenshot on failure
-            print('  ✗ Step failed: $e');
-            await _captureScreenshot(
-              binding,
-              testCase['name'],
-              'step_${i + 1}_${step['action']}_failure',
-            );
-            rethrow;
+          // Execute steps
+          final steps = testCase['steps'] as List;
+          for (int i = 0; i < steps.length; i++) {
+            final step = steps[i];
+            print('  Executing step ${i + 1}: ${step['action']}');
+            
+            try {
+              await _executeStep(tester, step);
+            } catch (e) {
+              // Log failure (screenshot disabled for web compatibility)
+              print('  ✗ Step failed: $e');
+              // TODO: Re-enable when WebDriver screenshot works on web
+              // await _captureScreenshot(binding, testCase['name'], 'step_${i + 1}_${step['action']}_failure');
+              rethrow;
+            }
           }
-        }
 
-        print('✓ Test case "${testCase['name']}" passed');
+          print('✓ Test case "${testCase['name']}" passed');
+          passed++;
+        } catch (e) {
+          print('✗ Test case "${testCase['name']}" failed');
+          failed++;
+          failedTests.add(testCase['name']);
+        }
+      }
+      
+      // Print test summary
+      print('\n' + '=' * 60);
+      print('TEST SUMMARY');
+      print('=' * 60);
+      print('Total: ${passed + failed}');
+      print('Passed: $passed');
+      print('Failed: $failed');
+      if (failedTests.isNotEmpty) {
+        print('\nFailed tests:');
+        for (final test in failedTests) {
+          print('  - $test');
+        }
+      }
+      print('=' * 60);
+      
+      // Fail the test if any test case failed
+      if (failed > 0) {
+        fail('$failed test case(s) failed');
       }
     });
   });
