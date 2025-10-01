@@ -53,15 +53,20 @@ jobs:
           echo "ChromeDriver linked to: $CHROMEDRIVER_PATH"
         fi
         
-        # Set Chrome path for Flutter
+        # Set Chrome path for Flutter and create symlink
         CHROME_EXECUTABLE=$(find chrome -type f -name "chrome" | head -1)
         echo "CHROME_EXECUTABLE=$(pwd)/$CHROME_EXECUTABLE" >> $GITHUB_ENV
+        
+        # Create google-chrome symlink in PATH
+        sudo ln -sf "$(pwd)/$CHROME_EXECUTABLE" /usr/local/bin/google-chrome
+        google-chrome --version
     
     - name: Verify Chrome and ChromeDriver installation
       run: |
         echo "ChromeDriver path: $(realpath drivers/chromedriver)"
-        drivers/chromedriver --version || echo "ChromeDriver not found or not executable"
+        drivers/chromedriver --version
         echo "Chrome executable: $CHROME_EXECUTABLE"
+        google-chrome --version
         ls -la drivers/
     
     - name: Run integration tests with xvfb (headless display)
