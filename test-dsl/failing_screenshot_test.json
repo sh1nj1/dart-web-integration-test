@@ -1,7 +1,3 @@
-// Auto-generated file - do not edit
-// Generated from: test-dsl/failing_screenshot_test.json
-
-const String testDslJson = '''
 {
   "name": "Screenshot Test Suite",
   "baseUrl": "http://localhost:3001",
@@ -24,5 +20,3 @@ const String testDslJson = '''
     }
   ]
 }
-
-''';

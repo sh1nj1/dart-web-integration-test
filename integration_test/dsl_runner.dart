@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -18,7 +19,7 @@ import 'app_config.dart' as config;
 /// 1. Create app_config.dart from app_config.dart.template
 /// 2. Implement the startApp() function to launch your app
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Flutter Web Integration Test', () {
     late Map<String, dynamic> testSuite;
@@ -55,7 +56,18 @@ void main() {
           final step = steps[i];
           print('  Executing step ${i + 1}: ${step['action']}');
           
-          await _executeStep(tester, step);
+          try {
+            await _executeStep(tester, step);
+          } catch (e) {
+            // Capture screenshot on failure
+            print('  ✗ Step failed: $e');
+            await _captureScreenshot(
+              binding,
+              testCase['name'],
+              'step_${i + 1}_${step['action']}_failure',
+            );
+            rethrow;
+          }
         }
 
         print('✓ Test case "${testCase['name']}" passed');
@@ -280,4 +292,31 @@ Future<void> _navigateToRoute(WidgetTester tester, String route) async {
   }
   
   print('  Warning: Could not navigate to route "$route"');
+}
+
+/// Capture screenshot on test failure
+Future<void> _captureScreenshot(
+  IntegrationTestWidgetsFlutterBinding binding,
+  String testCaseName,
+  String stepName,
+) async {
+  try {
+    // Generate filename with timestamp
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final sanitizedTestName = testCaseName
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    final sanitizedStepName = stepName
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    final filename = '${timestamp}_${sanitizedTestName}_$sanitizedStepName';
+
+    // Take screenshot using integration test binding
+    // On web, screenshots are handled by the WebDriver
+    await binding.takeScreenshot(filename);
+    
+    print('📸 Screenshot captured: $filename');
+  } catch (e) {
+    print('  Warning: Failed to capture screenshot: $e');
+  }
 }

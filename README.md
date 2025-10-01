@@ -161,14 +161,16 @@ dart run bin/run_tests.dart test-dsl/sample_test.json
 
 ## 스크린샷 기능
 
-### 테스트 실패 시 자동 스크린샷
-- 테스트가 실패하면 자동으로 `screenshots/` 디렉토리에 스크린샷이 저장됩니다
-- 파일명 형식: `{timestamp}_{testcase}_{step}.png`
-- 실패한 단계와 전체 테스트 실패 시점의 스크린샷을 촬영합니다
+### Flutter Integration Test에서의 스크린샷
+- 테스트 단계가 실패하면 자동으로 스크린샷이 촬영됩니다
+- 스크린샷은 integration test binding을 통해 캡처됩니다
+- 파일명 형식: `{timestamp}_{testcase}_{step}_failure`
 
-### 설정 옵션
-- `captureScreenshotsOnFailure`: 실패 시 스크린샷 촬영 (기본값: true)
-- `captureStepScreenshots`: 모든 단계별 스크린샷 촬영 (기본값: false)
+### Selenium Test에서의 스크린샷 (레거시)
+- Selenium 기반 테스트에서는 `screenshots/` 디렉토리에 PNG 파일로 저장됩니다
+- 설정 옵션:
+  - `captureScreenshotsOnFailure`: 실패 시 스크린샷 촬영 (기본값: true)
+  - `captureStepScreenshots`: 모든 단계별 스크린샷 촬영 (기본값: false)
 
 ## 개발
 
