@@ -1,0 +1,73 @@
+{
+  "name": "Flutter Web Test Suite",
+  "baseUrl": "http://localhost:3001",
+  "testCases": [
+    {
+      "name": "Homepage Navigation Test",
+      "description": "Test Flutter web app navigation and elements",
+      "url": "http://localhost:3001/#/",
+      "steps": [
+        {
+          "action": "wait",
+          "waitTime": 3000
+        },
+        {
+          "action": "assert_text",
+          "selector": "h1",
+          "expected": "Welcome to Test Target"
+        },
+        {
+          "action": "click",
+          "selector": "flt-semantics[aria-label='About']"
+        },
+        {
+          "action": "wait",
+          "waitTime": 2000
+        },
+        {
+          "action": "assert_text",
+          "selector": "h1",
+          "expected": "About Us"
+        }
+      ]
+    },
+    {
+      "name": "Contact Form Test",
+      "description": "Test Flutter web contact form input and submission",
+      "url": "http://localhost:3001/#/contact",
+      "steps": [
+        {
+          "action": "wait",
+          "waitTime": 3000
+        },
+        {
+          "action": "type",
+          "selector": "input[aria-label='Your Name']",
+          "value": "Test User"
+        },
+        {
+          "action": "type",
+          "selector": "input[aria-label='Your Email']",
+          "value": "test@example.com"
+        },
+        {
+          "action": "type",
+          "selector": "textarea[aria-label='Your Message']",
+          "value": "This is a test message from integration test"
+        },
+        {
+          "action": "click",
+          "selector": "button[data-semantics-role='button']"
+        },
+        {
+          "action": "wait",
+          "waitTime": 2000
+        },
+        {
+          "action": "assert_visible",
+          "selector": "flt-semantics[aria-label*='Thank you']"
+        }
+      ]
+    }
+  ]
+}

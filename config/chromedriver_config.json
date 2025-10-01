@@ -1,0 +1,29 @@
+{
+  "chromedriver": {
+    "path": "./drivers/chromedriver",
+    "port": 9515,
+    "args": [
+      "--port=9515",
+      "--whitelisted-ips="
+    ]
+  },
+  "chrome": {
+    "options": {
+      "args": [
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu"
+      ],
+      "headless": false,
+      "windowSize": {
+        "width": 1280,
+        "height": 720
+      }
+    }
+  },
+  "test": {
+    "timeout": 30000,
+    "retries": 2,
+    "stepDelay": 500
+  }
+}

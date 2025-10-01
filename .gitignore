@@ -1,0 +1,25 @@
+# Dart
+.dart_tool/
+.packages
+build/
+pubspec.lock
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ChromeDriver
+drivers/chromedriver*
+drivers/*.exe
+
+# Test results
+test-results/
+screenshots/
+
+# Logs
+*.log

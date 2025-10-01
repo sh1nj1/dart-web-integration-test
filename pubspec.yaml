@@ -1,0 +1,18 @@
+name: dart_web_integration_test
+description: Chrome WebDriver integration test framework for Dart web applications
+version: 1.0.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  webdriver: ^3.0.2
+  http: ^1.1.0
+  path: ^1.8.3
+
+dev_dependencies:
+  test: ^1.24.0
+  lints: ^2.1.1
+
+executables:
+  dart_web_integration_test:
