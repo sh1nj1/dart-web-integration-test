@@ -1,0 +1,14 @@
+// App-specific configuration for integration tests
+// Copy this file to your app and modify the import and main function
+
+import 'package:flutter_test/flutter_test.dart';
+
+// TODO: Import your app's main file
+// import 'package:your_app/main.dart' as app;
+
+/// Initialize and start the app for testing
+Future<void> startApp(WidgetTester tester) async {
+  // TODO: Start your app
+  // app.main();
+  await tester.pumpAndSettle();
+}

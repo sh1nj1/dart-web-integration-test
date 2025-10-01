@@ -2,11 +2,21 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:test_target/main.dart' as app;
 
 // Import generated test DSL data
 import 'test_dsl_data.dart';
 
+// Import app-specific configuration (optional)
+// If app_config.dart exists, it will be used to start the app
+// Otherwise, the app must be running before tests start
+import 'app_config.dart' as config;
+
+/// Generic DSL test runner for Flutter integration tests
+/// 
+/// This runner does not depend on any specific app implementation.
+/// To customize for your app:
+/// 1. Create app_config.dart from app_config.dart.template
+/// 2. Implement the startApp() function to launch your app
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -20,9 +30,8 @@ void main() {
     });
 
     testWidgets('Run DSL tests', (WidgetTester tester) async {
-      // Start the app
-      app.main();
-      await tester.pumpAndSettle();
+      // Start the app using app-specific configuration
+      await config.startApp(tester);
 
       final testCases = testSuite['testCases'] as List;
 
@@ -105,25 +114,9 @@ Future<void> _executeStep(WidgetTester tester, Map<String, dynamic> step) async 
 
 Future<void> _clickElement(WidgetTester tester, Map<String, dynamic> step) async {
   final selector = step['selector'] as String?;
-  
   if (selector == null) return;
 
-  Finder finder;
-
-  // Try to find by text content (for buttons)
-  if (selector.contains('About')) {
-    finder = find.text('About');
-  } else if (selector.contains('Contact')) {
-    finder = find.text('Contact');
-  } else if (selector.contains('Home')) {
-    finder = find.text('Home');
-  } else if (selector.contains('Send Message')) {
-    finder = find.text('Send Message');
-  } else {
-    // Try to find by button role
-    finder = find.byType(ElevatedButton);
-  }
-
+  final finder = _parseFinder(tester, selector);
   expect(finder, findsWidgets);
   await tester.tap(finder.first);
 }
@@ -132,28 +125,9 @@ Future<void> _typeText(WidgetTester tester, Map<String, dynamic> step) async {
   final value = step['value'] as String;
   final selector = step['selector'] as String?;
 
-  Finder finder;
-
-  if (selector != null) {
-    // Find by key if available
-    if (selector.contains('name')) {
-      finder = find.byKey(const Key('name-input'));
-    } else if (selector.contains('email')) {
-      finder = find.byKey(const Key('email-input'));
-    } else if (selector.contains('message')) {
-      finder = find.byKey(const Key('message-input'));
-    } else if (selector.contains('input')) {
-      // Find first available TextField
-      finder = find.byType(TextFormField).first;
-    } else if (selector.contains('textarea')) {
-      // Find TextField with maxLines > 1 by using Key
-      finder = find.byKey(const Key('message-input'));
-    } else {
-      finder = find.byType(TextFormField).first;
-    }
-  } else {
-    finder = find.byType(TextFormField).first;
-  }
+  final finder = selector != null 
+      ? _parseFinder(tester, selector)
+      : find.byType(TextFormField).first;
 
   expect(finder, findsWidgets);
   await tester.enterText(finder, value);
@@ -163,24 +137,102 @@ Future<void> _assertText(WidgetTester tester, Map<String, dynamic> step) async {
   final expected = step['expected'] as String;
   final selector = step['selector'] as String?;
 
-  // For semantics-based selectors, look for the text directly
-  if (selector != null && selector.contains('aria-label')) {
-    final ariaLabel = _extractAriaLabel(selector);
-    final finder = find.text(ariaLabel);
-    expect(finder, findsWidgets);
-  } else {
-    // Just find the text
-    final finder = find.text(expected);
-    expect(finder, findsWidgets);
+  final finder = selector != null 
+      ? _parseFinder(tester, selector)
+      : find.text(expected);
+
+  expect(finder, findsWidgets);
+  
+  // Verify text content if a specific element was selected
+  if (selector != null) {
+    final element = finder.evaluate().first;
+    final text = _extractText(element);
+    expect(text, contains(expected));
   }
 }
 
 Future<void> _assertVisible(WidgetTester tester, Map<String, dynamic> step) async {
   final selector = step['selector'] as String?;
+  if (selector == null) return;
   
-  if (selector != null && selector.contains('Thank you')) {
-    final finder = find.textContaining('Thank you');
-    expect(finder, findsWidgets);
+  final finder = _parseFinder(tester, selector);
+  expect(finder, findsWidgets);
+}
+
+/// Parse a selector string and return a Finder
+/// 
+/// Supported selector formats:
+/// - text:Button Text - find by text
+/// - key:my-key - find by key
+/// - type:ElevatedButton - find by widget type
+/// - index:2 - find by index (combined with type)
+/// - Contains patterns for backward compatibility
+Finder _parseFinder(WidgetTester tester, String selector) {
+  // New explicit selector format: type:value
+  if (selector.contains(':')) {
+    final parts = selector.split(':');
+    final selectorType = parts[0];
+    final selectorValue = parts.sublist(1).join(':'); // Handle colons in value
+    
+    switch (selectorType) {
+      case 'text':
+        return find.text(selectorValue);
+      case 'textContains':
+        return find.textContaining(selectorValue);
+      case 'key':
+        return find.byKey(Key(selectorValue));
+      case 'type':
+        return _findByTypeName(selectorValue);
+      default:
+        print('  Warning: Unknown selector type "$selectorType"');
+    }
+  }
+  
+  // Legacy/implicit selectors for backward compatibility
+  // Try to guess the intent from the selector string
+  
+  // Check for aria-label pattern (semantic web selectors)
+  if (selector.contains('aria-label')) {
+    final ariaLabel = _extractAriaLabel(selector);
+    return find.text(ariaLabel);
+  }
+  
+  // Check for key pattern
+  if (selector.contains('[key=')) {
+    final keyMatch = RegExp(r"\[key='([^']+)'\]").firstMatch(selector);
+    if (keyMatch != null) {
+      return find.byKey(Key(keyMatch.group(1)!));
+    }
+  }
+  
+  // Default: try to find as text
+  return find.text(selector);
+}
+
+Finder _findByTypeName(String typeName) {
+  // Map common widget type names to actual types
+  switch (typeName) {
+    case 'ElevatedButton':
+      return find.byType(ElevatedButton);
+    case 'TextButton':
+      return find.byType(TextButton);
+    case 'OutlinedButton':
+      return find.byType(OutlinedButton);
+    case 'IconButton':
+      return find.byType(IconButton);
+    case 'TextField':
+      return find.byType(TextField);
+    case 'TextFormField':
+      return find.byType(TextFormField);
+    case 'Checkbox':
+      return find.byType(Checkbox);
+    case 'Radio':
+      return find.byType(Radio);
+    case 'Switch':
+      return find.byType(Switch);
+    default:
+      // Return a finder that won't match anything
+      return find.byType(Widget);
   }
 }
 
@@ -190,31 +242,42 @@ String _extractAriaLabel(String selector) {
   return match?.group(1) ?? '';
 }
 
-Future<void> _navigateToRoute(WidgetTester tester, String route) async {
-  // Navigate by clicking the navigation button based on route
-  switch (route) {
-    case '/':
-    case '/#/':
-      final finder = find.text('Home');
-      if (finder.evaluate().isNotEmpty) {
-        await tester.tap(finder.first);
-      }
-      break;
-    case '/about':
-    case '/#/about':
-      final finder = find.text('About');
-      if (finder.evaluate().isNotEmpty) {
-        await tester.tap(finder.first);
-      }
-      break;
-    case '/contact':
-    case '/#/contact':
-      final finder = find.text('Contact');
-      if (finder.evaluate().isNotEmpty) {
-        await tester.tap(finder.first);
-      }
-      break;
-    default:
-      print('  Warning: Unknown route "$route"');
+String _extractText(Element element) {
+  final widget = element.widget;
+  if (widget is Text) {
+    return widget.data ?? '';
+  } else if (widget is RichText) {
+    return widget.text.toPlainText();
   }
+  // Try to find text in children
+  return '';
+}
+
+Future<void> _navigateToRoute(WidgetTester tester, String route) async {
+  // Extract route name from URL patterns
+  final routeName = route.replaceAll('/#', '').replaceAll('#', '');
+  
+  // Try to find and click navigation button by route name
+  // This assumes navigation buttons have text matching the route
+  final routeParts = routeName.split('/').where((p) => p.isNotEmpty).toList();
+  
+  if (routeParts.isEmpty) {
+    // Navigate to home
+    final finder = find.text('Home');
+    if (finder.evaluate().isNotEmpty) {
+      await tester.tap(finder.first);
+      return;
+    }
+  } else {
+    // Try to find button with capitalized route name
+    final routeText = routeParts.first[0].toUpperCase() + 
+                     routeParts.first.substring(1);
+    final finder = find.text(routeText);
+    if (finder.evaluate().isNotEmpty) {
+      await tester.tap(finder.first);
+      return;
+    }
+  }
+  
+  print('  Warning: Could not navigate to route "$route"');
 }

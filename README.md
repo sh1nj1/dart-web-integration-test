@@ -66,6 +66,42 @@ dart run bin/run_flutter_tests.dart test-dsl/sample_test.json /path/to/flutter/a
 
 **참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리가 자동으로 대상 앱에 복사되고, 테스트 완료 후 삭제됩니다.
 
+### 다른 Flutter 앱에서 사용하기
+
+1. **app_config.dart 생성**: `integration_test/app_config.dart.template`을 복사하여 앱별 설정 생성
+   ```dart
+   // integration_test/app_config.dart
+   import 'package:flutter_test/flutter_test.dart';
+   import 'package:your_app/main.dart' as app;
+
+   Future<void> startApp(WidgetTester tester) async {
+     app.main();
+     await tester.pumpAndSettle();
+   }
+   ```
+
+2. **위젯에 Key 추가**: 테스트할 위젯에 식별 가능한 Key 추가
+   ```dart
+   TextFormField(
+     key: const Key('username-input'),
+     decoration: const InputDecoration(labelText: 'Username'),
+   )
+   ```
+
+3. **테스트 DSL 작성**: `key:`, `text:`, `type:` 셀렉터 사용
+   ```json
+   {
+     "action": "type",
+     "selector": "key:username-input",
+     "value": "testuser"
+   }
+   ```
+
+4. **테스트 실행**:
+   ```bash
+   dart run bin/run_flutter_tests.dart my-test.json /path/to/your/flutter/app
+   ```
+
 **Selenium 방식 (참고용 - CanvasKit에서는 작동하지 않음)**
 ```bash
 # Selenium 기반 테스트 (HTML 렌더러에서만 작동)
@@ -105,6 +141,23 @@ dart run bin/run_tests.dart test-dsl/sample_test.json
 - `assert_text`: 텍스트 내용 검증
 - `assert_visible`: 요소 가시성 검증
 - `navigate`: 페이지 이동
+
+### 셀렉터 형식
+
+새로운 명시적 셀렉터 형식 (권장):
+- `text:Button Text` - 정확한 텍스트로 찾기
+- `textContains:partial text` - 부분 텍스트로 찾기
+- `key:my-widget-key` - Key로 찾기
+- `type:ElevatedButton` - 위젯 타입으로 찾기
+
+지원되는 위젯 타입:
+- `ElevatedButton`, `TextButton`, `OutlinedButton`, `IconButton`
+- `TextField`, `TextFormField`
+- `Checkbox`, `Radio`, `Switch`
+
+레거시 셀렉터 (하위 호환성):
+- `flt-semantics[aria-label='text']` - 자동으로 `text:text`로 변환
+- `[key='my-key']` - 자동으로 `key:my-key`로 변환
 
 ## 스크린샷 기능
 

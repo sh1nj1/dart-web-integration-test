@@ -20,6 +20,13 @@ void main(List<String> args) async {
     await _copyDirectory('./test_driver', '$targetAppDir/test_driver');
     await _copyDirectory('./integration_test', '$targetAppDir/integration_test');
     
+    // Check if app_config.dart exists, if not create from template
+    final appConfigFile = File('$targetAppDir/integration_test/app_config.dart');
+    if (!await appConfigFile.exists()) {
+      print('Note: app_config.dart not found. Using default template.');
+      print('You may need to create app_config.dart for app-specific initialization.');
+    }
+    
     // Generate test DSL as Dart code (for web compatibility)
     print('Generating test DSL code...');
     await _generateTestDslCode(testDslFile, '$targetAppDir/integration_test/test_dsl_data.dart');
