@@ -69,6 +69,8 @@ void main(List<String> args) async {
     
     // Prepare Chrome arguments for CI environment
     final chromeArgs = Platform.environment['CHROME_ARGS'] ?? '';
+    final chromeExecutable = Platform.environment['CHROME_EXECUTABLE'];
+    
     final args = [
       'drive',
       '--driver=test_driver/integration_test.dart',
@@ -77,6 +79,12 @@ void main(List<String> args) async {
       'chrome',
       '--dart-define=TEST_DSL_PATH=$absolutePath',
     ];
+    
+    // Specify Chrome binary if provided (for CI)
+    if (chromeExecutable != null && chromeExecutable.isNotEmpty) {
+      args.add('--chrome-binary=$chromeExecutable');
+      print('Using Chrome binary: $chromeExecutable');
+    }
     
     // Add Chrome arguments as web browser flags if provided
     if (chromeArgs.isNotEmpty) {
