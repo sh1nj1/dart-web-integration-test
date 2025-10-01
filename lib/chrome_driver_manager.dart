@@ -3,7 +3,7 @@ import 'package:webdriver/io.dart';
 
 class ChromeDriverManager {
   static const String defaultDriverPath = './drivers/chromedriver';
-  static const int defaultPort = 9515;
+  static const int defaultPort = 4444; // Flutter drive expects port 4444
   
   Process? _driverProcess;
   WebDriver? _driver;

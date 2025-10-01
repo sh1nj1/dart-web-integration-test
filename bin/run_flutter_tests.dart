@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import '../lib/chrome_driver_manager.dart';
 
 void main(List<String> args) async {
   if (args.isEmpty) {
@@ -14,7 +15,33 @@ void main(List<String> args) async {
   print('Running Flutter integration tests with DSL: $testDslFile');
   print('Target app directory: $targetAppDir');
 
+  // Initialize ChromeDriver manager
+  final chromeDriverManager = ChromeDriverManager();
+  bool chromeDriverStartedByUs = false;
+
   try {
+    // Check if ChromeDriver is already running
+    final isRunning = await _isChromeDriverRunning();
+    
+    if (!isRunning) {
+      // Start ChromeDriver only if not already running
+      print('Starting ChromeDriver...');
+      await chromeDriverManager.startDriver();
+      chromeDriverStartedByUs = true;
+      
+      // Wait and verify ChromeDriver is ready
+      print('Waiting for ChromeDriver to be ready...');
+      for (int i = 0; i < 10; i++) {
+        await Future.delayed(Duration(milliseconds: 500));
+        if (await _isChromeDriverRunning()) {
+          print('ChromeDriver is ready!');
+          break;
+        }
+      }
+    } else {
+      print('ChromeDriver already running, using existing instance...');
+    }
+    
     // Create symlinks instead of copying files (keeps target app clean)
     print('Creating test infrastructure symlinks...');
     final currentDir = Directory.current.absolute.path;
@@ -86,6 +113,12 @@ void main(List<String> args) async {
     await _deleteSymlink('$targetAppDir/test_driver');
     await _deleteSymlink('$targetAppDir/integration_test');
     
+    // Stop ChromeDriver only if we started it
+    if (chromeDriverStartedByUs) {
+      print('Stopping ChromeDriver...');
+      await chromeDriverManager.stopDriver();
+    }
+    
     print('Done!');
     
     // Force exit
@@ -95,6 +128,10 @@ void main(List<String> args) async {
     // Clean up on error
     await _deleteSymlink('$targetAppDir/test_driver');
     await _deleteSymlink('$targetAppDir/integration_test');
+    
+    if (chromeDriverStartedByUs) {
+      await chromeDriverManager.stopDriver();
+    }
     exit(1);
   }
 }
@@ -159,5 +196,16 @@ Future<void> _killChromeProcesses() async {
     }
   } catch (e) {
     // Ignore errors if no processes found
+  }
+}
+
+Future<bool> _isChromeDriverRunning() async {
+  try {
+    // Try to connect to ChromeDriver's default port (4444)
+    final socket = await Socket.connect('localhost', 4444, timeout: Duration(seconds: 1));
+    await socket.close();
+    return true;
+  } catch (e) {
+    return false;
   }
 }
