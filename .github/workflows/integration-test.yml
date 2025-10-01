@@ -70,7 +70,22 @@ jobs:
         ls -la drivers/
     
     - name: Run integration tests with xvfb (headless display)
-      run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' dart run bin/run_flutter_tests.dart test-dsl/sample_test.json
+      env:
+        DISPLAY: ':99'
+      run: |
+        # Start Xvfb
+        Xvfb :99 -screen 0 1920x1080x24 &
+        XVFB_PID=$!
+        sleep 2
+        
+        # Run tests
+        dart run bin/run_flutter_tests.dart test-dsl/sample_test.json
+        TEST_EXIT_CODE=$?
+        
+        # Stop Xvfb
+        kill $XVFB_PID || true
+        
+        exit $TEST_EXIT_CODE
     
     - name: Upload screenshots on failure
       if: failure()
