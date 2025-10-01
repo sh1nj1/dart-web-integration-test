@@ -45,6 +45,11 @@ void main(List<String> args) async {
     // Create symlinks instead of copying files (keeps target app clean)
     print('Creating test infrastructure symlinks...');
     final currentDir = Directory.current.absolute.path;
+    
+    // Backup existing directories if they exist
+    await _backupExistingDirectory('$targetAppDir/test_driver');
+    await _backupExistingDirectory('$targetAppDir/integration_test');
+    
     await _createSymlink('$currentDir/test_driver', '$targetAppDir/test_driver');
     await _createSymlink('$currentDir/integration_test', '$targetAppDir/integration_test');
     
@@ -107,10 +112,14 @@ void main(List<String> args) async {
     // Kill any remaining Chrome processes
     await _killChromeProcesses();
     
-    // Clean up symlinks and generated files
+    // Clean up symlinks and restore backups
     print('\nCleaning up test infrastructure...');
     await _deleteSymlink('$targetAppDir/test_driver');
     await _deleteSymlink('$targetAppDir/integration_test');
+    
+    // Restore backed up directories
+    await _restoreBackup('$targetAppDir/test_driver');
+    await _restoreBackup('$targetAppDir/integration_test');
     
     // Stop ChromeDriver only if we started it
     if (chromeDriverStartedByUs) {
@@ -127,6 +136,10 @@ void main(List<String> args) async {
     // Clean up on error
     await _deleteSymlink('$targetAppDir/test_driver');
     await _deleteSymlink('$targetAppDir/integration_test');
+    
+    // Restore backups
+    await _restoreBackup('$targetAppDir/test_driver');
+    await _restoreBackup('$targetAppDir/integration_test');
     
     if (chromeDriverStartedByUs) {
       await chromeDriverManager.stopDriver();
@@ -206,5 +219,27 @@ Future<bool> _isChromeDriverRunning() async {
     return true;
   } catch (e) {
     return false;
+  }
+}
+
+Future<void> _backupExistingDirectory(String path) async {
+  final dir = Directory(path);
+  final link = Link(path);
+  
+  // Check if it's a real directory (not a symlink)
+  if (await dir.exists() && !await link.exists()) {
+    final backupPath = '$path.bak';
+    print('  Backing up existing directory: $path -> $backupPath');
+    await dir.rename(backupPath);
+  }
+}
+
+Future<void> _restoreBackup(String path) async {
+  final backupPath = '$path.bak';
+  final backupDir = Directory(backupPath);
+  
+  if (await backupDir.exists()) {
+    print('  Restoring backup: $backupPath -> $path');
+    await backupDir.rename(path);
   }
 }
