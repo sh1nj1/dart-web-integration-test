@@ -78,12 +78,11 @@ void main(List<String> args) async {
       '--dart-define=TEST_DSL_PATH=$absolutePath',
     ];
     
-    // Add Chrome arguments if provided
+    // Add Chrome arguments as web browser flags if provided
     if (chromeArgs.isNotEmpty) {
-      args.add('--chrome-binary=${Platform.environment['CHROME_EXECUTABLE']}');
       for (final arg in chromeArgs.split(' ')) {
         if (arg.isNotEmpty) {
-          args.add('--chrome-args=$arg');
+          args.add('--web-browser-flag=$arg');
         }
       }
     }
