@@ -26,26 +26,36 @@ jobs:
         cd test_target
         flutter pub get
     
-    - name: Install Chrome and ChromeDriver
+    - name: Setup Node.js for Puppeteer
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Install Chrome and ChromeDriver using Puppeteer
       run: |
-        # Install Chrome
-        wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
+        # Install Chrome using Puppeteer browsers
+        npx --yes @puppeteer/browsers install chrome@stable
         
-        # Get Chrome version
-        CHROME_VERSION=$(google-chrome --version | sed 's/Google Chrome //' | cut -d. -f1)
-        echo "Chrome version: $CHROME_VERSION"
+        # Get installed Chrome version
+        CHROME_DIR=$(find chrome -name "chrome-linux64" -o -name "chrome-mac" -o -name "chrome-win" | head -1)
+        CHROME_VERSION=$(basename $(dirname $CHROME_DIR) | cut -d'-' -f3)
+        echo "Installed Chrome version: $CHROME_VERSION"
         
-        # Download matching ChromeDriver
-        CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_$CHROME_VERSION")
-        echo "ChromeDriver version: $CHROMEDRIVER_VERSION"
+        # Install matching ChromeDriver
+        npx --yes @puppeteer/browsers install chromedriver@$CHROME_VERSION
         
-        wget -q "https://storage.googleapis.com/chrome-for-testing-public/$CHROMEDRIVER_VERSION/linux64/chromedriver-linux64.zip"
-        unzip -q chromedriver-linux64.zip
+        # Create symlink for drivers directory
         mkdir -p drivers
-        mv chromedriver-linux64/chromedriver drivers/
-        chmod +x drivers/chromedriver
-        rm -rf chromedriver-linux64 chromedriver-linux64.zip
+        CHROMEDRIVER_PATH=$(find chromedriver -type f -name "chromedriver" | head -1)
+        if [ -f "$CHROMEDRIVER_PATH" ]; then
+          ln -s "$(pwd)/$CHROMEDRIVER_PATH" drivers/chromedriver
+          chmod +x drivers/chromedriver
+          echo "ChromeDriver linked to: $CHROMEDRIVER_PATH"
+        fi
+        
+        # Set Chrome path for Flutter
+        CHROME_EXECUTABLE=$(find chrome -type f -name "chrome" | head -1)
+        echo "CHROME_EXECUTABLE=$(pwd)/$CHROME_EXECUTABLE" >> $GITHUB_ENV
     
     - name: Run integration tests
       run: dart run bin/run_flutter_tests.dart test-dsl/sample_test.json
