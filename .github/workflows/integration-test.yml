@@ -33,16 +33,16 @@ jobs:
     
     - name: Install Chrome and ChromeDriver using Puppeteer
       run: |
-        # Install Chrome using Puppeteer browsers
-        npx --yes @puppeteer/browsers install chrome@stable
+        # Install latest Chrome
+        npx --yes @puppeteer/browsers install chrome@latest
         
         # Get installed Chrome version
         CHROME_DIR=$(find chrome -name "chrome-linux64" -o -name "chrome-mac" -o -name "chrome-win" | head -1)
-        CHROME_VERSION=$(basename $(dirname $CHROME_DIR) | cut -d'-' -f3)
-        echo "Installed Chrome version: $CHROME_VERSION"
+        CHROME_VERSION=$(basename $(dirname $CHROME_DIR))
+        echo "Installed Chrome version directory: $CHROME_VERSION"
         
         # Install matching ChromeDriver
-        npx --yes @puppeteer/browsers install chromedriver@$CHROME_VERSION
+        npx --yes @puppeteer/browsers install chromedriver@latest
         
         # Create symlink for drivers directory
         mkdir -p drivers
