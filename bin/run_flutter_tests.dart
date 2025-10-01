@@ -69,7 +69,6 @@ void main(List<String> args) async {
         '--target=integration_test/dsl_runner.dart',
         '-d',
         'chrome',
-        '--headless',
         '--dart-define=TEST_DSL_PATH=$absolutePath',
       ],
       workingDirectory: targetAppDir,

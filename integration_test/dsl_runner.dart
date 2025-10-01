@@ -300,6 +300,7 @@ Future<void> _captureScreenshot(
   String testCaseName,
   String stepName,
 ) async {
+  print('  Attempting to capture screenshot...');
   try {
     // Generate filename with timestamp
     final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -311,12 +312,15 @@ Future<void> _captureScreenshot(
         .replaceAll(RegExp(r'[^a-z0-9]+'), '_');
     final filename = '${timestamp}_${sanitizedTestName}_$sanitizedStepName';
 
-    // Take screenshot using integration test binding
-    // On web, screenshots are handled by the WebDriver
-    await binding.takeScreenshot(filename);
+    print('  Screenshot filename: $filename');
     
-    print('📸 Screenshot captured: $filename');
-  } catch (e) {
+    // Take screenshot using integration test binding
+    // On web, screenshots are handled by the WebDriver via driver callback
+    final result = await binding.takeScreenshot(filename);
+    
+    print('📸 Screenshot captured: $filename (result: $result)');
+  } catch (e, stackTrace) {
     print('  Warning: Failed to capture screenshot: $e');
+    print('  Stack trace: $stackTrace');
   }
 }
