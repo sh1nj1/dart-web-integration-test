@@ -84,13 +84,14 @@ jobs:
     - name: Run integration tests with xvfb (headless display)
       env:
         DISPLAY: ':99'
+        CHROME_ARGS: '--no-sandbox --disable-dev-shm-usage'
       run: |
         # Start Xvfb
         Xvfb :99 -screen 0 1920x1080x24 &
         XVFB_PID=$!
         sleep 2
         
-        # Run tests
+        # Run tests (Chrome args passed via environment)
         dart run bin/run_flutter_tests.dart test-dsl/sample_test.json
         TEST_EXIT_CODE=$?
         

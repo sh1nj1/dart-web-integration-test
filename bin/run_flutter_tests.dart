@@ -66,16 +66,31 @@ void main(List<String> args) async {
 
     // Run Flutter driver test for web
     print('Starting Flutter driver...');
+    
+    // Prepare Chrome arguments for CI environment
+    final chromeArgs = Platform.environment['CHROME_ARGS'] ?? '';
+    final args = [
+      'drive',
+      '--driver=test_driver/integration_test.dart',
+      '--target=integration_test/dsl_runner.dart',
+      '-d',
+      'chrome',
+      '--dart-define=TEST_DSL_PATH=$absolutePath',
+    ];
+    
+    // Add Chrome arguments if provided
+    if (chromeArgs.isNotEmpty) {
+      args.add('--chrome-binary=${Platform.environment['CHROME_EXECUTABLE']}');
+      for (final arg in chromeArgs.split(' ')) {
+        if (arg.isNotEmpty) {
+          args.add('--chrome-args=$arg');
+        }
+      }
+    }
+    
     final process = await Process.start(
       'flutter',
-      [
-        'drive',
-        '--driver=test_driver/integration_test.dart',
-        '--target=integration_test/dsl_runner.dart',
-        '-d',
-        'chrome',
-        '--dart-define=TEST_DSL_PATH=$absolutePath',
-      ],
+      args,
       workingDirectory: targetAppDir,
       runInShell: true,
     );
