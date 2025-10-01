@@ -57,8 +57,8 @@ jobs:
         CHROME_EXECUTABLE=$(find chrome -type f -name "chrome" | head -1)
         echo "CHROME_EXECUTABLE=$(pwd)/$CHROME_EXECUTABLE" >> $GITHUB_ENV
     
-    - name: Run integration tests
-      run: dart run bin/run_flutter_tests.dart test-dsl/sample_test.json
+    - name: Run integration tests with xvfb (headless display)
+      run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' dart run bin/run_flutter_tests.dart test-dsl/sample_test.json
     
     - name: Upload screenshots on failure
       if: failure()
