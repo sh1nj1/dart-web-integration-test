@@ -10,7 +10,7 @@ void log(Object? message) => print('[DSL] $message');
 
 void main(List<String> args) async {
   if (args.isEmpty) {
-    log('Usage: dart run bin/run_flutter_tests.dart <test_dsl_file|glob_pattern> [target-app-dir]');
+    log('Usage: dart run bin/run_flutter_tests.dart <test_dsl_file|glob_pattern> --target-app [target-app-dir]');
     log('Examples:');
     log('  dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml');
     log('  dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"');
