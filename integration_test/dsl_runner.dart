@@ -261,12 +261,6 @@ Finder _findByTypeName(String typeName) {
   }
 }
 
-String _extractAriaLabel(String selector) {
-  final regex = RegExp(r"aria-label='([^']+)'");
-  final match = regex.firstMatch(selector);
-  return match?.group(1) ?? '';
-}
-
 String _extractText(Element element) {
   final widget = element.widget;
   if (widget is Text) {
