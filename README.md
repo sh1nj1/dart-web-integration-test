@@ -1,5 +1,7 @@
 # Flutter Web Integration Test
 
+[🇰🇷 (한국어)](./README_KO.md) | [🇬🇧 (English)](./README.md)
+
 Integration test framework for Flutter web applications built on top of Chrome WebDriver.
 
 ## Project Structure
@@ -63,23 +65,25 @@ flutter run -d chrome --web-port 3001
 
 ```bash
 # Run a single test file (YAML preferred, JSON also supported)
-dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml
+./test.sh test_dsl/sample_test.yaml
 
 # Run multiple test files (supports glob patterns)
-dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"
-dart run bin/run_flutter_tests.dart "test_dsl/**/*.yaml"
+./test.sh "test_dsl/*.yaml"
+./test.sh "test_dsl/**/*.yaml"
 
 # Test a different Flutter app (auto-generates app_config.dart)
-dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../myapp
-dart run bin/run_flutter_tests.dart test_dsl/* --target-app /path/to/app
+./test.sh test_dsl/* --target-app ../myapp
+./test.sh test_dsl/* --target-app /path/to/app
 
 # Pass additional Flutter arguments (e.g., --dart-define)
-dart run bin/run_flutter_tests.dart test_dsl/* --dart-define flavor=local
-dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../myapp --dart-define ENV=prod
+./test.sh test_dsl/* --dart-define flavor=local
+./test.sh test_dsl/* --target-app ../myapp --dart-define ENV=prod
 
 # Alternatively, point directly to an app directory (requires manual app_config.dart)
-dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/app
+./test.sh test_dsl/sample_test.yaml /path/to/flutter/app
 ```
+
+`test.sh` is a thin wrapper around `dart run bin/run_flutter_tests.dart`, so you can continue to invoke the Dart script directly if preferred.
 
 **Note**: When tests run, symbolic links to `integration_test/` and `test_driver/` are created and automatically removed when execution finishes.
 
@@ -111,7 +115,7 @@ dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/a
 
 4. **Run the tests**
    ```bash
-   dart run bin/run_flutter_tests.dart my-test.yaml --target-app /path/to/your/flutter/app
+   ./test.sh my-test.yaml --target-app /path/to/your/flutter/app
    ```
 
 

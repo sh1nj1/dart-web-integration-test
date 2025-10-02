@@ -1,5 +1,7 @@
 # Flutter Web Integration Test
 
+[🇰🇷 (한국어)](./README_KO.md) | [🇬🇧 (English)](./README.md)
+
 Chrome WebDriver를 사용한 Flutter 웹 애플리케이션 integration test 프레임워크
 
 ## 프로젝트 구조
@@ -64,23 +66,25 @@ flutter run -d chrome --web-port 3001
 
 ```bash
 # 단일 테스트 파일 실행 (YAML 권장, JSON도 지원)
-dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml
+./test.sh test_dsl/sample_test.yaml
 
 # 여러 테스트 파일 실행 (glob 패턴 사용)
-dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"
-dart run bin/run_flutter_tests.dart "test_dsl/**/*.yaml"
+./test.sh "test_dsl/*.yaml"
+./test.sh "test_dsl/**/*.yaml"
 
 # 다른 Flutter 앱 테스트 (자동 app_config.dart 생성)
-dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../myapp
-dart run bin/run_flutter_tests.dart test_dsl/* --target-app /path/to/app
+./test.sh test_dsl/* --target-app ../myapp
+./test.sh test_dsl/* --target-app /path/to/app
 
 # 추가 Flutter 인자 전달 (--dart-define 등)
-dart run bin/run_flutter_tests.dart test_dsl/* --dart-define flavor=local
-dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../myapp --dart-define ENV=prod
+./test.sh test_dsl/* --dart-define flavor=local
+./test.sh test_dsl/* --target-app ../myapp --dart-define ENV=prod
 
 # 또는 앱 디렉토리 직접 지정 (수동 app_config.dart 필요)
-dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/app
+./test.sh test_dsl/sample_test.yaml /path/to/flutter/app
 ```
+
+`test.sh`는 `dart run bin/run_flutter_tests.dart`를 감싸는 간단한 스크립트이므로 필요하다면 기존 Dart 명령을 그대로 사용할 수도 있습니다.
 
 **참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리에 대한 심볼릭 링크가 생성되고, 테스트 완료 후 자동으로 삭제됩니다.
 
@@ -112,7 +116,7 @@ dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/a
 
 4. **테스트 실행**:
    ```bash
-   dart run bin/run_flutter_tests.dart my-test.yaml --target-app /path/to/your/flutter/app
+   ./test.sh my-test.yaml --target-app /path/to/your/flutter/app
    ```
 
 
