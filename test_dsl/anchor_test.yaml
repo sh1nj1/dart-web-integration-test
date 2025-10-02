@@ -14,7 +14,6 @@ x-common-steps:
 testCases:
   - name: Test with Anchors
     description: Demonstrate YAML anchor usage
-    url: "http://localhost:3001/#/"
     steps:
       - *wait-long
       - action: assert_text

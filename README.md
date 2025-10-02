@@ -14,8 +14,7 @@ dart-web-integration-test/
 ├── test_dsl/                     # 테스트 DSL 파일들 (JSON/YAML)
 │   ├── sample_test.json          # 샘플 테스트 케이스 (JSON)
 │   ├── sample_test.yaml          # 샘플 테스트 케이스 (YAML)
-│   ├── anchor_test.yaml          # YAML anchor 예제
-│   └── failing_test.json         # 실패 테스트 (스크린샷 데모용)
+│   └── anchor_test.yaml          # YAML anchor 예제
 ├── integration_test/             # Flutter Integration Test 러너
 │   └── dsl_runner.dart           # JSON/YAML DSL을 Flutter 테스트로 변환
 ├── test_driver/                  # Flutter Driver
@@ -124,7 +123,6 @@ baseUrl: http://localhost:3000
 testCases:
   - name: 테스트 케이스 이름
     description: 테스트 설명
-    url: "선택적 URL (기본: baseUrl 사용)"
     steps:
       - action: click|type|wait|assert_text|assert_visible
         selector: "셀렉터 (필요시)"

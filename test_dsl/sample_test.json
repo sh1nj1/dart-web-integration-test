@@ -5,7 +5,6 @@
     {
       "name": "Homepage Navigation Test",
       "description": "Test Flutter web app navigation and elements",
-      "url": "http://localhost:3001/#/",
       "steps": [
         {
           "action": "wait",

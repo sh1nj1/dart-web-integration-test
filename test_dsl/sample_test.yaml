@@ -3,7 +3,6 @@ baseUrl: http://localhost:3001
 testCases:
   - name: Homepage Navigation Test
     description: Test Flutter web app navigation and elements
-    url: "http://localhost:3001/#/"
     steps:
       - action: wait
         waitTime: 3000
@@ -20,8 +19,11 @@ testCases:
   
   - name: Contact Form Test
     description: Test Flutter web contact form input and submission
-    url: "http://localhost:3001/#/contact"
     steps:
+      - action: click
+        selector: "text:Contact"
+      - action: wait
+        waitTime: 500
       - action: wait
         waitTime: 3000
       - action: type
