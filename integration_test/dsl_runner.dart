@@ -224,6 +224,9 @@ Finder _parseFinder(WidgetTester tester, String selector) {
     switch (selectorType) {
       case 'contains':
         return find.textContaining(selectorValue);
+      case 'label':
+        finder = find.bySemanticsLabel(selectorValue);
+        break;
       case 'key':
         return find.byKey(Key(selectorValue));
       case 'type':
