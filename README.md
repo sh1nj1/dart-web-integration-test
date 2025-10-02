@@ -99,7 +99,7 @@ dart run bin/run_flutter_tests.dart "test_dsl/*.yaml" /path/to/flutter/app
    )
    ```
 
-3. **테스트 DSL 작성**: `key:`, `text:`, `type:` 셀렉터 사용
+3. **테스트 DSL 작성**: 텍스트, `key:`, `type:` 셀렉터 사용
    ```yaml
    - action: type
      selector: "key:username-input"
@@ -165,9 +165,9 @@ testCases:
 
 ### 셀렉터 형식
 
-명시적 셀렉터 형식:
-- `text:Button Text` - 정확한 텍스트로 찾기
-- `textContains:partial text` - 부분 텍스트로 찾기
+셀렉터 형식:
+- `Button Text` - 정확한 텍스트로 찾기 (접두사 불필요)
+- `contains:partial text` - 부분 텍스트로 찾기
 - `key:my-widget-key` - Key로 찾기
 - `type:ElevatedButton` - 위젯 타입으로 찾기
 

@@ -217,8 +217,8 @@ Future<void> _assertVisible(WidgetTester tester, Map<String, dynamic> step) asyn
 /// Parse a selector string and return a Finder
 /// 
 /// Supported selector formats:
-/// - text:Button Text - find by text
-/// - textContains:partial - find by partial text
+/// - Button Text - find by exact text (no prefix needed)
+/// - contains:partial - find by partial text
 /// - key:my-key - find by key
 /// - type:ElevatedButton - find by widget type
 Finder _parseFinder(WidgetTester tester, String selector) {
@@ -228,9 +228,7 @@ Finder _parseFinder(WidgetTester tester, String selector) {
     final selectorValue = parts.sublist(1).join(':'); // Handle colons in value
     
     switch (selectorType) {
-      case 'text':
-        return find.text(selectorValue);
-      case 'textContains':
+      case 'contains':
         return find.textContaining(selectorValue);
       case 'key':
         return find.byKey(Key(selectorValue));

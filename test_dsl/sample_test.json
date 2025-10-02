@@ -6,16 +6,16 @@
       "steps": [
         {
           "action": "assert_text",
-          "selector": "text:Welcome to Test Target",
+          "selector": "Welcome to Test Target",
           "expected": "Welcome to Test Target"
         },
         {
           "action": "click",
-          "selector": "text:About"
+          "selector": "About"
         },
         {
           "action": "assert_text",
-          "selector": "text:About Us",
+          "selector": "About Us",
           "expected": "About Us"
         }
       ]
@@ -25,7 +25,7 @@
       "steps": [
         {
           "action": "click",
-          "selector": "text:Contact"
+          "selector": "Contact"
         },
         {
           "action": "type",
@@ -44,7 +44,7 @@
         },
         {
           "action": "click",
-          "selector": "text:Send Message"
+          "selector": "Send Message"
         },
         {
           "action": "assert_text",
