@@ -155,7 +155,18 @@ void main(List<String> args) async {
       
       // Generate test DSL as Dart code (for web compatibility)
       log('Generating test DSL code...');
-      await _generateTestDslCode(testDslFile, '$targetAppDir/integration_test/test_dsl_data.dart');
+      
+      // Create build directory for generated files
+      final buildDir = Directory('$currentDir/build/generated');
+      if (!await buildDir.exists()) {
+        await buildDir.create(recursive: true);
+      }
+      
+      final generatedFile = '$currentDir/build/generated/test_dsl_data.dart';
+      await _generateTestDslCode(testDslFile, generatedFile);
+      
+      // Copy generated file to integration_test symlink
+      await File(generatedFile).copy('$targetAppDir/integration_test/test_dsl_data.dart');
 
     // Run Flutter driver test for web
     log('Starting Flutter driver...');
