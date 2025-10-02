@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:yaml/yaml.dart';
 
 class TestStep {
   final String action;
@@ -76,7 +77,25 @@ class TestSuite {
   static Future<TestSuite> loadFromFile(String filePath) async {
     final file = File(filePath);
     final content = await file.readAsString();
-    final json = jsonDecode(content) as Map<String, dynamic>;
-    return TestSuite.fromJson(json);
+    
+    Map<String, dynamic> data;
+    if (filePath.endsWith('.yaml') || filePath.endsWith('.yml')) {
+      final yaml = loadYaml(content);
+      data = _convertYamlToMap(yaml);
+    } else {
+      data = jsonDecode(content) as Map<String, dynamic>;
+    }
+    
+    return TestSuite.fromJson(data);
+  }
+  
+  static Map<String, dynamic> _convertYamlToMap(dynamic yaml) {
+    if (yaml is YamlMap) {
+      return Map<String, dynamic>.from(yaml.map((key, value) => MapEntry(key.toString(), _convertYamlToMap(value))));
+    } else if (yaml is YamlList) {
+      return yaml.map((item) => _convertYamlToMap(item)).toList();
+    } else {
+      return yaml;
+    }
   }
 }

@@ -8,14 +8,16 @@ Chrome WebDriver를 사용한 Dart 웹 애플리케이션 integration test 프�
 dart-web-integration-test/
 ├── lib/                          # 핵심 라이브러리
 │   ├── chrome_driver_manager.dart # ChromeDriver 관리
-│   └── test_dsl_parser.dart       # JSON 테스트 DSL 파서
+│   └── test_dsl_parser.dart       # JSON/YAML 테스트 DSL 파서
 ├── bin/                          # 실행 파일
 │   └── run_flutter_tests.dart    # Flutter Integration 테스트 실행기
-├── test_dsl/                     # 테스트 DSL JSON 파일들
-│   ├── sample_test.json          # 샘플 테스트 케이스
+├── test-dsl/                     # 테스트 DSL 파일들 (JSON/YAML)
+│   ├── sample_test.json          # 샘플 테스트 케이스 (JSON)
+│   ├── sample_test.yaml          # 샘플 테스트 케이스 (YAML)
+│   ├── anchor_test.yaml          # YAML anchor 예제
 │   └── failing_test.json         # 실패 테스트 (스크린샷 데모용)
 ├── integration_test/             # Flutter Integration Test 러너
-│   └── dsl_runner.dart           # JSON DSL을 Flutter 테스트로 변환
+│   └── dsl_runner.dart           # JSON/YAML DSL을 Flutter 테스트로 변환
 ├── test_driver/                  # Flutter Driver
 │   └── integration_test.dart     # Integration test driver
 ├── test_target/                  # 테스트 대상 Flutter 웹 앱 (독립적)
@@ -53,11 +55,11 @@ flutter run -d chrome --web-port 3001
 ### 테스트 실행
 
 ```bash
-# Flutter Integration Test 실행
-dart run bin/run_flutter_tests.dart test_dsl/sample_test.json
+# Flutter Integration Test 실행 (YAML 권장, JSON도 지원)
+dart run bin/run_flutter_tests.dart test-dsl/sample_test.yaml
 
 # 다른 Flutter 앱 테스트
-dart run bin/run_flutter_tests.dart test_dsl/sample_test.json /path/to/flutter/app
+dart run bin/run_flutter_tests.dart test-dsl/sample_test.yaml /path/to/flutter/app
 ```
 
 **참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리에 대한 심볼릭 링크가 생성되고, 테스트 완료 후 자동으로 삭제됩니다.
@@ -85,44 +87,63 @@ dart run bin/run_flutter_tests.dart test_dsl/sample_test.json /path/to/flutter/a
    ```
 
 3. **테스트 DSL 작성**: `key:`, `text:`, `type:` 셀렉터 사용
-   ```json
-   {
-     "action": "type",
-     "selector": "key:username-input",
-     "value": "testuser"
-   }
+   ```yaml
+   - action: type
+     selector: "key:username-input"
+     value: testuser
    ```
 
 4. **테스트 실행**:
    ```bash
-   dart run bin/run_flutter_tests.dart my-test.json /path/to/your/flutter/app
+   dart run bin/run_flutter_tests.dart my-test.yaml /path/to/your/flutter/app
    ```
 
 
 
 ### 테스트 DSL 형식
 
-```json
-{
-  "name": "테스트 스위트 이름",
-  "baseUrl": "http://localhost:3000",
-  "testCases": [
-    {
-      "name": "테스트 케이스 이름",
-      "description": "테스트 설명",
-      "url": "선택적 URL (기본: baseUrl 사용)",
-      "steps": [
-        {
-          "action": "click|type|wait|assert_text|assert_visible|navigate",
-          "selector": "CSS 선택자 (필요시)",
-          "value": "입력값 (type, navigate 액션용)",
-          "expected": "예상값 (assert 액션용)",
-          "waitTime": "대기시간 (밀리초)"
-        }
-      ]
-    }
-  ]
-}
+YAML 형식으로 테스트를 작성합니다 (JSON 형식도 지원).
+
+```yaml
+name: 테스트 스위트 이름
+baseUrl: http://localhost:3000
+testCases:
+  - name: 테스트 케이스 이름
+    description: 테스트 설명
+    url: "선택적 URL (기본: baseUrl 사용)"
+    steps:
+      - action: click|type|wait|assert_text|assert_visible|navigate
+        selector: "CSS 선택자 (필요시)"
+        value: 입력값 (type, navigate 액션용)
+        expected: 예상값 (assert 액션용)
+        waitTime: 대기시간 (밀리초)
+```
+
+#### YAML Anchor 사용 (재사용 가능한 스텝)
+
+YAML anchor와 alias를 사용하여 반복되는 스텝을 재사용할 수 있습니다:
+
+```yaml
+name: YAML Anchor Example
+baseUrl: http://localhost:3000
+
+# 재사용 가능한 스텝 정의
+x-common-steps:
+  wait-short: &wait-short
+    action: wait
+    waitTime: 500
+  
+  wait-long: &wait-long
+    action: wait
+    waitTime: 3000
+
+testCases:
+  - name: Example Test
+    steps:
+      - *wait-long  # anchor 참조
+      - action: click
+        selector: "text:Button"
+      - *wait-short
 ```
 
 ### 지원되는 액션

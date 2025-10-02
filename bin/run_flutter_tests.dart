@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'package:yaml/yaml.dart';
 import '../lib/chrome_driver_manager.dart';
 
 void main(List<String> args) async {
@@ -201,9 +203,19 @@ Future<void> _deleteSymlink(String path) async {
   }
 }
 
-Future<void> _generateTestDslCode(String jsonPath, String outputPath) async {
-  final jsonFile = File(jsonPath);
-  final jsonContent = await jsonFile.readAsString();
+Future<void> _generateTestDslCode(String dslPath, String outputPath) async {
+  final dslFile = File(dslPath);
+  final dslContent = await dslFile.readAsString();
+  
+  // Convert to JSON if input is YAML
+  String jsonContent;
+  if (dslPath.endsWith('.yaml') || dslPath.endsWith('.yml')) {
+    final yaml = loadYaml(dslContent);
+    final Map<String, dynamic> data = _convertYamlToMap(yaml);
+    jsonContent = jsonEncode(data);
+  } else {
+    jsonContent = dslContent;
+  }
   
   // Escape the JSON content for Dart string literal
   final escapedContent = jsonContent
@@ -211,13 +223,24 @@ Future<void> _generateTestDslCode(String jsonPath, String outputPath) async {
       .replaceAll(r"'", r"\'");
   
   final dartCode = '// Auto-generated file - do not edit\n'
-      '// Generated from: $jsonPath\n\n'
+      '// Generated from: $dslPath\n\n'
       "const String testDslJson = '''\n"
       '$escapedContent\n'
       "''';\n";
   
   final outputFile = File(outputPath);
   await outputFile.writeAsString(dartCode);
+}
+
+dynamic _convertYamlToMap(dynamic yaml) {
+  if (yaml is YamlMap) {
+    return Map<String, dynamic>.from(yaml.map((key, value) => 
+      MapEntry(key.toString(), _convertYamlToMap(value))));
+  } else if (yaml is YamlList) {
+    return yaml.map((item) => _convertYamlToMap(item)).toList();
+  } else {
+    return yaml;
+  }
 }
 
 Future<void> _killChromeProcesses() async {

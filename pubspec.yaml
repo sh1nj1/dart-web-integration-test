@@ -9,6 +9,7 @@ dependencies:
   webdriver: ^3.0.2
   http: ^1.1.0
   path: ^1.8.3
+  yaml: ^3.1.2
 
 dev_dependencies:
   test: ^1.24.0
