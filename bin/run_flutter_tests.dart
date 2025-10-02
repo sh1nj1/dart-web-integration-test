@@ -93,6 +93,11 @@ void main(List<String> args) async {
   final chromeDriverManager = ChromeDriverManager();
   bool chromeDriverStartedByUs = false;
 
+  // Track test results
+  int totalPassed = 0;
+  int totalFailed = 0;
+  final failedFiles = <String>[];
+
   try {
     // Check if ChromeDriver is already running
     final isRunning = await _isChromeDriverRunning();
@@ -117,10 +122,6 @@ void main(List<String> args) async {
     }
 
     // Run tests for each file
-    int totalPassed = 0;
-    int totalFailed = 0;
-    final failedFiles = <String>[];
-
     for (int fileIndex = 0; fileIndex < uniqueFiles.length; fileIndex++) {
       final testDslFile = uniqueFiles[fileIndex];
       final absolutePath = File(testDslFile).absolute.path;
