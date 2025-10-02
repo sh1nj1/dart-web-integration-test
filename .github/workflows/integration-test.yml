@@ -91,7 +91,7 @@ jobs:
         sleep 2
         
         # Run tests (Chrome args passed via environment)
-        dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml
+        dart run bin/run_flutter_tests.dart "test_dsl/*"
         TEST_EXIT_CODE=$?
         
         # Stop Xvfb
