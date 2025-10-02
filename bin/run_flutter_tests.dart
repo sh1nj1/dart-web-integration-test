@@ -21,13 +21,17 @@ void main(List<String> args) async {
 
   // Separate test patterns, target directory, and flutter drive arguments
   String targetAppDir = './test_target';
+  String? targetAppMain;
   final testPatterns = <String>[];
   final flutterArgs = <String>[];
   
   for (int i = 0; i < args.length; i++) {
     final arg = args[i];
     
-    if (arg.startsWith('-')) {
+    if (arg == '--target-app' && i + 1 < args.length) {
+      // Target app main.dart file
+      targetAppMain = args[++i];
+    } else if (arg.startsWith('-')) {
       // Flutter drive argument (e.g., --dart-define, -d, etc.)
       flutterArgs.add(arg);
       // Check if next arg is a value for this flag
@@ -44,6 +48,19 @@ void main(List<String> args) async {
     } else {
       testPatterns.add(arg);
     }
+  }
+  
+  // If target-app is specified, derive targetAppDir from it
+  if (targetAppMain != null) {
+    final mainFile = File(targetAppMain);
+    if (!await mainFile.exists()) {
+      log('❌ Target app main file not found: $targetAppMain');
+      exit(1);
+    }
+    // Get parent directory of lib/
+    targetAppDir = mainFile.parent.parent.path;
+    log('Target app: $targetAppMain');
+    log('Target app directory: $targetAppDir');
   }
   
   if (testPatterns.isEmpty) {
