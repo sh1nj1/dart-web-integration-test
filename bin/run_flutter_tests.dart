@@ -19,22 +19,36 @@ void main(List<String> args) async {
     exit(1);
   }
 
-  // Determine if last arg is a directory (targetAppDir) or a test file
+  // Separate test patterns, target directory, and flutter drive arguments
   String targetAppDir = './test_target';
-  List<String> testPatterns;
+  final testPatterns = <String>[];
+  final flutterArgs = <String>[];
   
-  if (args.length > 1) {
-    final lastArg = args.last;
-    // Check if last arg looks like a directory or a test file
-    if (Directory(lastArg).existsSync() || 
-        (!lastArg.endsWith('.yaml') && !lastArg.endsWith('.json') && !lastArg.contains('*'))) {
-      targetAppDir = lastArg;
-      testPatterns = args.sublist(0, args.length - 1);
+  for (int i = 0; i < args.length; i++) {
+    final arg = args[i];
+    
+    if (arg.startsWith('-')) {
+      // Flutter drive argument (e.g., --dart-define, -d, etc.)
+      flutterArgs.add(arg);
+      // Check if next arg is a value for this flag
+      if (i + 1 < args.length && !args[i + 1].startsWith('-') && 
+          (arg.startsWith('--') && arg.contains('=') == false)) {
+        i++;
+        flutterArgs.add(args[i]);
+      }
+    } else if (Directory(arg).existsSync() && 
+               !arg.endsWith('.yaml') && 
+               !arg.endsWith('.json') && 
+               !arg.contains('*')) {
+      targetAppDir = arg;
     } else {
-      testPatterns = args;
+      testPatterns.add(arg);
     }
-  } else {
-    testPatterns = args;
+  }
+  
+  if (testPatterns.isEmpty) {
+    log('❌ No test files specified');
+    exit(1);
   }
 
   // Resolve test files from patterns or single files
