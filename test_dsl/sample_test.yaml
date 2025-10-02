@@ -4,15 +4,11 @@ testCases:
   - name: Homepage Navigation Test
     description: Test Flutter web app navigation and elements
     steps:
-      - action: wait
-        waitTime: 3000
       - action: assert_text
         selector: "text:Welcome to Test Target"
         expected: Welcome to Test Target
       - action: click
         selector: "text:About"
-      - action: wait
-        waitTime: 2000
       - action: assert_text
         selector: "text:About Us"
         expected: About Us
@@ -22,27 +18,17 @@ testCases:
     steps:
       - action: click
         selector: "text:Contact"
-      - action: wait
-        waitTime: 500
-      - action: wait
-        waitTime: 3000
       - action: type
         selector: "key:name-input"
         value: Test User
-      - action: wait
-        waitTime: 500
       - action: type
         selector: "key:email-input"
         value: test@example.com
-      - action: wait
-        waitTime: 500
       - action: type
         selector: "key:message-input"
         value: This is a test message from integration test
       - action: click
         selector: "text:Send Message"
-      - action: wait
-        waitTime: 2000
       - action: assert_text
         selector: "textContains:Thank you"
         expected: Thank you

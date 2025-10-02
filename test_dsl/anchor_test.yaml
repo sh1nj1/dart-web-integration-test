@@ -15,13 +15,14 @@ testCases:
   - name: Test with Anchors
     description: Demonstrate YAML anchor usage
     steps:
-      - *wait-long
       - action: assert_text
         selector: "text:Welcome to Test Target"
         expected: Welcome to Test Target
       - action: click
         selector: "text:About"
-      - *wait-short
       - action: assert_text
         selector: "text:About Us"
         expected: About Us
+      - *wait-short
+      - action: click
+        selector: "text:Home"

@@ -201,7 +201,7 @@ Future<void> _assertVisible(WidgetTester tester, Map<String, dynamic> step) asyn
   if (selector == null) return;
   
   final finder = _parseFinder(tester, selector);
-  expect(finder, findsWidgets);
+  await _waitForFinder(tester, finder);
 }
 
 /// Parse a selector string and return a Finder
