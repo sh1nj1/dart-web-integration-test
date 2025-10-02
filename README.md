@@ -38,9 +38,10 @@ dart-web-integration-test/
 dart pub get
 ```
 
-### 2. ChromeDriver 설치
-설치 스크립트를 실행하여 현재 Chrome 버전에 맞는 ChromeDriver를 자동으로 설치:
+### 2. ChromeDriver 설치 (자동)
+ChromeDriver가 설치되어 있지 않으면 테스트 실행 시 자동으로 설치 여부를 물어봅니다.
 
+**수동 설치:**
 ```bash
 dart run bin/install_chromedriver.dart
 ```

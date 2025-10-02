@@ -20,9 +20,31 @@ void main(List<String> args) async {
   // Check if ChromeDriver is installed
   if (!await _isChromeDriverInstalled()) {
     print('\n❌ ChromeDriver not found!');
-    print('Please install ChromeDriver by running:');
-    print('  dart run bin/install_chromedriver.dart\n');
-    exit(1);
+    print('Would you like to install it now? (y/n)');
+    
+    final response = stdin.readLineSync();
+    if (response?.toLowerCase() == 'y' || response?.toLowerCase() == 'yes') {
+      print('\nInstalling ChromeDriver...\n');
+      final installResult = await Process.run(
+        'dart',
+        ['run', 'bin/install_chromedriver.dart'],
+        runInShell: true,
+      );
+      
+      stdout.write(installResult.stdout);
+      stderr.write(installResult.stderr);
+      
+      if (installResult.exitCode != 0) {
+        print('\n❌ ChromeDriver installation failed!');
+        exit(1);
+      }
+      
+      print('\n✓ ChromeDriver installed successfully!\n');
+    } else {
+      print('\nPlease install ChromeDriver by running:');
+      print('  dart run bin/install_chromedriver.dart\n');
+      exit(1);
+    }
   }
 
   // Initialize ChromeDriver manager
