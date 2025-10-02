@@ -1,5 +1,4 @@
 name: YAML Anchor Test
-baseUrl: http://localhost:3001
 
 # Define reusable step templates
 x-common-steps:

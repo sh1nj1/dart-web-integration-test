@@ -55,19 +55,16 @@ class TestCase {
 
 class TestSuite {
   final String name;
-  final String baseUrl;
   final List<TestCase> testCases;
   
   TestSuite({
     required this.name,
-    required this.baseUrl,
     required this.testCases,
   });
   
   factory TestSuite.fromJson(Map<String, dynamic> json) {
     return TestSuite(
       name: json['name'] as String,
-      baseUrl: json['baseUrl'] as String,
       testCases: (json['testCases'] as List)
           .map((testCase) => TestCase.fromJson(testCase as Map<String, dynamic>))
           .toList(),

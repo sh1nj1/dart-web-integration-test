@@ -1,5 +1,10 @@
+// Auto-generated file - do not edit
+// Generated from: test_dsl/sample_test.json
+
+const String testDslJson = '''
 {
   "name": "Flutter Web Test Suite",
+  "baseUrl": "http://localhost:3001",
   "testCases": [
     {
       "name": "Homepage Navigation Test",
@@ -57,3 +62,5 @@
     }
   ]
 }
+
+''';

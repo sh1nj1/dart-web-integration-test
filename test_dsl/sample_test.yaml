@@ -1,5 +1,4 @@
 name: Flutter Web Test Suite
-baseUrl: http://localhost:3001
 testCases:
   - name: Homepage Navigation Test
     description: Test Flutter web app navigation and elements

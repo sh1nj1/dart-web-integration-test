@@ -119,7 +119,6 @@ YAML 형식으로 테스트를 작성합니다 (JSON 형식도 지원).
 
 ```yaml
 name: 테스트 스위트 이름
-baseUrl: http://localhost:3000
 testCases:
   - name: 테스트 케이스 이름
     description: 테스트 설명
@@ -137,7 +136,6 @@ YAML anchor와 alias를 사용하여 반복되는 스텝을 재사용할 수 있
 
 ```yaml
 name: YAML Anchor Example
-baseUrl: http://localhost:3000
 
 # 재사용 가능한 스텝 정의
 x-common-steps:
