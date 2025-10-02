@@ -1,92 +1,91 @@
 # Flutter Web Integration Test
 
-Chrome WebDriver를 사용한 Flutter 웹 애플리케이션 integration test 프레임워크
+Integration test framework for Flutter web applications built on top of Chrome WebDriver.
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 dart-web-integration-test/
-├── lib/                          # 핵심 라이브러리
-│   ├── chrome_driver_manager.dart # ChromeDriver 관리
-│   └── test_dsl_parser.dart       # JSON/YAML 테스트 DSL 파서
-├── bin/                          # 실행 파일
-│   └── run_flutter_tests.dart    # Flutter Integration 테스트 실행기
-├── test_dsl/                     # 테스트 DSL 파일들 (JSON/YAML)
-│   ├── sample_test.json          # 샘플 테스트 케이스 (JSON)
-│   ├── sample_test.yaml          # 샘플 테스트 케이스 (YAML)
-│   └── anchor_test.yaml          # YAML anchor 예제
-├── integration_test/             # Flutter Integration Test 러너
-│   └── dsl_runner.dart           # JSON/YAML DSL을 Flutter 테스트로 변환
-├── test_driver/                  # Flutter Driver
+├── lib/                          # Core library code
+│   ├── chrome_driver_manager.dart # ChromeDriver management
+│   └── test_dsl_parser.dart       # JSON/YAML test DSL parser
+├── bin/                          # Executables
+│   └── run_flutter_tests.dart    # Flutter integration test runner
+├── test_dsl/                     # Test DSL files (JSON/YAML)
+│   ├── sample_test.json          # Sample test case (JSON)
+│   ├── sample_test.yaml          # Sample test case (YAML)
+│   └── anchor_test.yaml          # YAML anchor example
+├── integration_test/             # Flutter integration test runner
+│   └── dsl_runner.dart           # Converts JSON/YAML DSL into Flutter tests
+├── test_driver/                  # Flutter driver
 │   └── integration_test.dart     # Integration test driver
-├── test_target/                  # 테스트 대상 Flutter 웹 앱 (독립적)
-│   ├── lib/main.dart            # Flutter 앱 메인 파일
-│   ├── pubspec.yaml             # Flutter 프로젝트 설정
-│   └── web/                     # 웹 빌드 파일들
-├── drivers/                      # ChromeDriver 실행 파일 저장소
-├── screenshots/                  # 테스트 실패 시 스크린샷 저장소
-├── config/                       # 설정 파일들
-│   └── chromedriver_config.json  # ChromeDriver 설정
-└── test/                         # 단위 테스트
+├── test_target/                  # Standalone Flutter web app under test
+│   ├── lib/main.dart             # Flutter app entry point
+│   ├── pubspec.yaml              # Flutter project configuration
+│   └── web/                      # Web build assets
+├── drivers/                      # ChromeDriver binaries
+├── screenshots/                  # Screenshot output when tests fail
+├── config/                       # Configuration files
+│   └── chromedriver_config.json  # ChromeDriver settings
+└── test/                         # Unit tests
 ```
 
-## 설치 및 설정
+## Installation and Setup
 
-### 1. 의존성 설치
+### 1. Install dependencies
 ```bash
 dart pub get
 ```
 
-### 2. ChromeDriver 설치
-ChromeDriver가 설치되어 있지 않으면 테스트 실행 시 자동으로 설치 여부를 물어봅니다.
+### 2. Install ChromeDriver
+If ChromeDriver is not installed, the test runner will ask whether it should install it automatically when you launch the tests.
 
-원하는 경우 미리 수동으로 설치할 수 있습니다:
+You can also install it manually in advance:
 
 ```bash
-# 자동 설치 (Chrome 버전에 맞게 설치)
+# Automatic installation (downloads the matching version for Chrome)
 dart run bin/install_chromedriver.dart
 
-# 또는 수동으로 ChromeDriver를 다운로드하여 drivers/chromedriver에 배치
+# Or download ChromeDriver yourself and place it under drivers/chromedriver
 ```
 
-### 3. Flutter 웹 앱 실행
+### 3. Run the Flutter web app
 ```bash
-# test_target 디렉토리에서 Flutter 웹 앱 실행
+# Launch the Flutter web app from the test_target directory
 cd test_target
 flutter run -d chrome --web-port 3001
 ```
 
 
+## Usage
 
-## 사용법
-
-### 테스트 실행
+### Run tests
 
 ```bash
-# 단일 테스트 파일 실행 (YAML 권장, JSON도 지원)
+# Run a single test file (YAML preferred, JSON also supported)
 dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml
 
-# 여러 테스트 파일 실행 (glob 패턴 사용)
+# Run multiple test files (supports glob patterns)
 dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"
 dart run bin/run_flutter_tests.dart "test_dsl/**/*.yaml"
 
-# 다른 Flutter 앱 테스트 (자동 app_config.dart 생성)
+# Test a different Flutter app (auto-generates app_config.dart)
 dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../myapp
 dart run bin/run_flutter_tests.dart test_dsl/* --target-app /path/to/app
 
-# 추가 Flutter 인자 전달 (--dart-define 등)
+# Pass additional Flutter arguments (e.g., --dart-define)
 dart run bin/run_flutter_tests.dart test_dsl/* --dart-define flavor=local
 dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../myapp --dart-define ENV=prod
 
-# 또는 앱 디렉토리 직접 지정 (수동 app_config.dart 필요)
+# Alternatively, point directly to an app directory (requires manual app_config.dart)
 dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/app
 ```
 
-**참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리에 대한 심볼릭 링크가 생성되고, 테스트 완료 후 자동으로 삭제됩니다.
+**Note**: When tests run, symbolic links to `integration_test/` and `test_driver/` are created and automatically removed when execution finishes.
 
-### 다른 Flutter 앱에서 사용하기
+### Use with another Flutter app
 
-1. add integration_test dependency
+1. Add the `integration_test` dependency
    ```yaml
    dev_dependencies:
      flutter_test:
@@ -95,7 +94,7 @@ dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/a
        sdk: flutter
    ```
 
-2. **위젯에 Key 추가**: 테스트할 위젯에 식별 가능한 Key 추가
+2. **Add Keys to widgets**: Add identifiable keys to the widgets you want to test
    ```dart
    TextFormField(
      key: const Key('username-input'),
@@ -103,49 +102,48 @@ dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/a
    )
    ```
 
-3. **테스트 DSL 작성**: 텍스트, `key:`, `type:` 셀렉터 사용
+3. **Write the test DSL**: Use selectors like text, `key:`, and `type:`
    ```yaml
    - action: type
      selector: "key:username-input"
      value: testuser
    ```
 
-4. **테스트 실행**:
+4. **Run the tests**
    ```bash
    dart run bin/run_flutter_tests.dart my-test.yaml --target-app /path/to/your/flutter/app
    ```
 
 
+### Test DSL format
 
-### 테스트 DSL 형식
-
-YAML 형식으로 테스트를 작성합니다 (JSON 형식도 지원).
+Write your tests in YAML (JSON is also supported).
 
 ```yaml
-name: 테스트 스위트 이름
+name: Test suite name
 testCases:
-  - description: 테스트 설명
+  - description: Test description
     steps:
       - action: click|type|wait|assert_text|assert_visible
-        selector: "셀렉터 (필요시)"
-        value: 입력값 (type 액션용)
-        expected: 예상값 (assert 액션용)
-        waitTime: 대기시간 (밀리초)
+        selector: "Selector (if needed)"
+        value: Input value (for type actions)
+        expected: Expected value (for assert actions)
+        waitTime: Wait time in milliseconds
 ```
 
-#### YAML Anchor 사용 (재사용 가능한 스텝)
+#### Using YAML anchors (reusable steps)
 
-YAML anchor와 alias를 사용하여 반복되는 스텝을 재사용할 수 있습니다:
+Use YAML anchors and aliases to reuse repeated steps:
 
 ```yaml
 name: YAML Anchor Example
 
-# 재사용 가능한 스텝 정의
+# Reusable step definitions
 x-common-steps:
   wait-short: &wait-short
     action: wait
     waitTime: 500
-  
+
   wait-long: &wait-long
     action: wait
     waitTime: 3000
@@ -153,51 +151,51 @@ x-common-steps:
 testCases:
   - description: Example test with anchors
     steps:
-      - *wait-long  # anchor 참조
+      - *wait-long  # reference an anchor
       - action: click
         selector: "text:Button"
       - *wait-short
 ```
 
-### 지원되는 액션
+### Supported actions
 
-- `click`: 요소 클릭
-- `type`: 텍스트 입력
-- `wait`: 지정된 시간 대기
-- `assert_text`: 텍스트 내용 검증
-- `assert_visible`: 요소 가시성 검증
+- `click`: Tap or click a widget
+- `type`: Enter text
+- `wait`: Pause for the given duration
+- `assert_text`: Verify widget text
+- `assert_visible`: Verify widget visibility
 
-### 셀렉터 형식
+### Selector formats
 
-셀렉터 형식:
-- `Button Text` - 정확한 텍스트로 찾기 (접두사 불필요)
-- `Button Text[0]` - 첫 번째 매칭되는 텍스트
-- `contains:partial text` - 부분 텍스트로 찾기
-- `contains:partial[1]` - 두 번째 매칭되는 부분 텍스트
-- `key:my-widget-key` - Key로 찾기
-- `key:my-key[0]` - 첫 번째 매칭되는 Key
-- `label:Submit Button` - Semantics 라벨로 찾기
-- `label:Submit[0]` - 첫 번째 매칭되는 Semantics 라벨
-- `type:ElevatedButton` - 위젯 타입으로 찾기
-- `type:TextField[2]` - 세 번째 매칭되는 위젯 타입
+Selectors can be written as:
+- `Button Text` - Match exact text (no prefix required)
+- `Button Text[0]` - Select the first match with that text
+- `contains:partial text` - Match partial text
+- `contains:partial[1]` - Select the second match for a partial text
+- `key:my-widget-key` - Match by widget key
+- `key:my-key[0]` - Select the first match by key
+- `label:Submit Button` - Match by semantics label
+- `label:Submit[0]` - Select the first match for a semantics label
+- `type:ElevatedButton` - Match by widget type
+- `type:TextField[2]` - Select the third match for a widget type
 
-**인덱스 사용**: 여러 개의 위젯이 매칭될 때 `[숫자]`를 추가하여 특정 순서의 위젯을 선택할 수 있습니다 (0부터 시작).
+**Using indexes**: When multiple widgets match, append `[number]` to target a specific instance (0-based).
 
-지원되는 위젯 타입:
+Supported widget types:
 - `ElevatedButton`, `TextButton`, `OutlinedButton`, `IconButton`
 - `TextField`, `TextFormField`
 - `Checkbox`, `Radio`, `Switch`
 
-## 스크린샷 기능
+## Screenshot support
 
-### Flutter Integration Test
-**현재 웹에서는 스크린샷이 작동하지 않습니다.**
+### Flutter integration test
+**Screenshots are currently not available on the web.**
 
-- Flutter integration test의 `takeScreenshot()`이 웹에서 WebDriver 세션 문제로 hang됩니다
-- 스크린샷 코드는 구현되어 있지만 비활성화되어 있습니다
-- 모바일/데스크톱 플랫폼에서는 정상 작동할 수 있습니다
-- 향후 WebDriver 세션 문제가 해결되면 재활성화 가능합니다
+- `takeScreenshot()` in Flutter integration tests hangs on the web because of WebDriver session issues
+- The screenshot code is implemented but disabled
+- It should work on mobile and desktop platforms
+- Once the WebDriver session issue is resolved, screenshots can be re-enabled
 
-## 개발
+## Development
 
-새로운 액션을 추가하려면 `integration_test/dsl_runner.dart`의 `_executeStep` 함수를 수정하세요.
+To add a new action, modify the `_executeStep` function in `integration_test/dsl_runner.dart`.
