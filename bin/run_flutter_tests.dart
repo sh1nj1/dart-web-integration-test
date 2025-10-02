@@ -12,22 +12,46 @@ void main(List<String> args) async {
     print('  dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml');
     print('  dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"');
     print('  dart run bin/run_flutter_tests.dart "test_dsl/**/*.yaml"');
+    print('\nNote: Quote the pattern to prevent shell expansion!');
     exit(1);
   }
 
-  final testDslPattern = args[0];
-  final targetAppDir = args.length > 1 ? args[1] : './test_target';
-
-  // Resolve test files from pattern or single file
-  final testFiles = await _resolveTestFiles(testDslPattern);
+  // Determine if last arg is a directory (targetAppDir) or a test file
+  String targetAppDir = './test_target';
+  List<String> testPatterns;
   
-  if (testFiles.isEmpty) {
-    print('❌ No test files found matching: $testDslPattern');
+  if (args.length > 1) {
+    final lastArg = args.last;
+    // Check if last arg looks like a directory or a test file
+    if (Directory(lastArg).existsSync() || 
+        (!lastArg.endsWith('.yaml') && !lastArg.endsWith('.json') && !lastArg.contains('*'))) {
+      targetAppDir = lastArg;
+      testPatterns = args.sublist(0, args.length - 1);
+    } else {
+      testPatterns = args;
+    }
+  } else {
+    testPatterns = args;
+  }
+
+  // Resolve test files from patterns or single files
+  final testFiles = <String>[];
+  for (final pattern in testPatterns) {
+    final files = await _resolveTestFiles(pattern);
+    testFiles.addAll(files);
+  }
+  
+  // Remove duplicates and sort
+  final uniqueFiles = testFiles.toSet().toList();
+  uniqueFiles.sort();
+  
+  if (uniqueFiles.isEmpty) {
+    print('❌ No test files found');
     exit(1);
   }
 
-  print('Found ${testFiles.length} test file(s):');
-  for (final file in testFiles) {
+  print('Found ${uniqueFiles.length} test file(s):');
+  for (final file in uniqueFiles) {
     print('  - $file');
   }
   print('');
@@ -67,12 +91,12 @@ void main(List<String> args) async {
   int totalFailed = 0;
   final failedFiles = <String>[];
 
-  for (int fileIndex = 0; fileIndex < testFiles.length; fileIndex++) {
-    final testDslFile = testFiles[fileIndex];
+  for (int fileIndex = 0; fileIndex < uniqueFiles.length; fileIndex++) {
+    final testDslFile = uniqueFiles[fileIndex];
     final absolutePath = File(testDslFile).absolute.path;
 
     print('\n${'=' * 60}');
-    print('Running test file ${fileIndex + 1}/${testFiles.length}: $testDslFile');
+    print('Running test file ${fileIndex + 1}/${uniqueFiles.length}: $testDslFile');
     print('=' * 60);
     print('Target app directory: $targetAppDir\n');
 
@@ -240,7 +264,7 @@ void main(List<String> args) async {
   print('\n${'=' * 60}');
   print('OVERALL TEST SUMMARY');
   print('=' * 60);
-  print('Total test files: ${testFiles.length}');
+  print('Total test files: ${uniqueFiles.length}');
   print('Passed: $totalPassed');
   print('Failed: $totalFailed');
   
