@@ -13,7 +13,7 @@ import 'test_dsl_data.dart';
 import 'app_config.dart' as config;
 
 // Custom print function with [DSL] prefix
-void log(Object? message) => log('$message');
+void log(Object? message) => print('[DSL] $message');
 
 /// Generic DSL test runner for Flutter integration tests
 /// 
