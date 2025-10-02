@@ -261,11 +261,29 @@ Future<List<String>> _resolveTestFiles(String pattern) async {
   if (pattern.contains('*') || pattern.contains('?') || pattern.contains('[')) {
     // Use glob to find matching files
     final glob = Glob(pattern);
-    final files = await glob
-        .list()
-        .where((entity) => entity is File)
-        .map((entity) => entity.path)
-        .toList();
+    final files = <String>[];
+    
+    // Extract directory path from pattern
+    final parts = pattern.split('/');
+    var dirPath = '.';
+    for (int i = 0; i < parts.length - 1; i++) {
+      if (!parts[i].contains('*') && !parts[i].contains('?')) {
+        dirPath = parts.sublist(0, i + 1).join('/');
+      } else {
+        break;
+      }
+    }
+    
+    // List files recursively and filter by glob
+    final dir = Directory(dirPath);
+    if (await dir.exists()) {
+      await for (final entity in dir.list(recursive: true)) {
+        if (entity is File && glob.matches(entity.path)) {
+          files.add(entity.path);
+        }
+      }
+    }
+    
     files.sort(); // Sort for consistent ordering
     return files;
   } else {
