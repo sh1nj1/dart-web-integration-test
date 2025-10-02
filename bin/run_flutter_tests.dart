@@ -50,16 +50,14 @@ void main(List<String> args) async {
     }
   }
   
-  // If target-app is specified, derive targetAppDir from it
+  // If target-app is specified, use it as the app directory
   if (targetAppMain != null) {
-    final mainFile = File(targetAppMain);
-    if (!await mainFile.exists()) {
-      log('❌ Target app main file not found: $targetAppMain');
+    targetAppDir = targetAppMain;
+    final appDir = Directory(targetAppDir);
+    if (!await appDir.exists()) {
+      log('❌ Target app directory not found: $targetAppDir');
       exit(1);
     }
-    // Get parent directory of lib/
-    targetAppDir = mainFile.parent.parent.path;
-    log('Target app: $targetAppMain');
     log('Target app directory: $targetAppDir');
   }
   
