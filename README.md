@@ -11,7 +11,7 @@ dart-web-integration-test/
 │   └── test_dsl_parser.dart       # JSON 테스트 DSL 파서
 ├── bin/                          # 실행 파일
 │   └── run_flutter_tests.dart    # Flutter Integration 테스트 실행기
-├── test-dsl/                     # 테스트 DSL JSON 파일들
+├── test_dsl/                     # 테스트 DSL JSON 파일들
 │   ├── sample_test.json          # 샘플 테스트 케이스
 │   └── failing_test.json         # 실패 테스트 (스크린샷 데모용)
 ├── integration_test/             # Flutter Integration Test 러너
@@ -46,23 +46,21 @@ cd test_target
 flutter run -d chrome --web-port 3001
 ```
 
-**참고**: 최신 Flutter는 자동으로 CanvasKit 렌더러를 사용합니다. 테스트 프레임워크는 자동으로 접근성을 활성화하여 Selenium이 요소를 찾을 수 있도록 합니다.
+
 
 ## 사용법
 
 ### 테스트 실행
 
-Flutter의 CanvasKit 렌더러는 Canvas로 렌더링하므로 Selenium WebDriver로 DOM 요소를 찾을 수 없습니다. 따라서 Flutter Integration Test를 사용합니다:
-
 ```bash
-# Flutter Integration Test 실행 (권장)
-dart run bin/run_flutter_tests.dart test-dsl/sample_test.json
+# Flutter Integration Test 실행
+dart run bin/run_flutter_tests.dart test_dsl/sample_test.json
 
-# 다른 Flutter 앱 테스트 (런타임에 클론된 앱 등)
-dart run bin/run_flutter_tests.dart test-dsl/sample_test.json /path/to/flutter/app
+# 다른 Flutter 앱 테스트
+dart run bin/run_flutter_tests.dart test_dsl/sample_test.json /path/to/flutter/app
 ```
 
-**참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리에 대한 심볼릭 링크가 생성되고, 테스트 완료 후 자동으로 삭제됩니다. 실제 파일은 복사되지 않아 대상 앱을 깨끗하게 유지합니다.
+**참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리에 대한 심볼릭 링크가 생성되고, 테스트 완료 후 자동으로 삭제됩니다.
 
 ### 다른 Flutter 앱에서 사용하기
 
@@ -100,11 +98,7 @@ dart run bin/run_flutter_tests.dart test-dsl/sample_test.json /path/to/flutter/a
    dart run bin/run_flutter_tests.dart my-test.json /path/to/your/flutter/app
    ```
 
-**Selenium 방식 (참고용 - CanvasKit에서는 작동하지 않음)**
-```bash
-# Selenium 기반 테스트 (HTML 렌더러에서만 작동)
-dart run bin/run_tests.dart test-dsl/sample_test.json
-```
+
 
 ### 테스트 DSL 형식
 
