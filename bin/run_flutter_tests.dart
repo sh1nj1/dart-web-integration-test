@@ -6,7 +6,7 @@ import 'package:yaml/yaml.dart';
 import '../lib/chrome_driver_manager.dart';
 
 // Custom print function with [DSL] prefix
-void log(Object? message) => log('[DSL] $message');
+void log(Object? message) => print('[DSL] $message');
 
 void main(List<String> args) async {
   if (args.isEmpty) {
