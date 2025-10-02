@@ -42,7 +42,7 @@ dart pub get
 설치 스크립트를 실행하여 현재 Chrome 버전에 맞는 ChromeDriver를 자동으로 설치:
 
 ```bash
-./bin/install_chromedriver.sh
+dart run bin/install_chromedriver.dart
 ```
 
 ### 3. Flutter 웹 앱 실행
