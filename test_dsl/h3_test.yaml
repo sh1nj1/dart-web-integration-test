@@ -1,0 +1,30 @@
+name: H3 Test Suite
+testCases:
+  - description: Login test
+    steps:
+      - action: type
+        selector: "Home"
+      - action: type
+        selector: "Welcome to Test Target"
+        expected: Welcome to Test Target
+      - action: click
+        selector: "로그인"
+  
+  - description: Test Flutter web contact form input and submission
+    steps:
+      - action: click
+        selector: "Contact"
+      - action: type
+        selector: "key:name-input"
+        value: Test User
+      - action: type
+        selector: "key:email-input"
+        value: test@example.com
+      - action: type
+        selector: "key:message-input"
+        value: This is a test message from integration test
+      - action: click
+        selector: "Send Message"
+      - action: assert_text
+        selector: "contains:Thank you"
+        expected: Thank you

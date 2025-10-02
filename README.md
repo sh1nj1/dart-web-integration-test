@@ -171,9 +171,15 @@ testCases:
 
 셀렉터 형식:
 - `Button Text` - 정확한 텍스트로 찾기 (접두사 불필요)
+- `Button Text[0]` - 첫 번째 매칭되는 텍스트
 - `contains:partial text` - 부분 텍스트로 찾기
+- `contains:partial[1]` - 두 번째 매칭되는 부분 텍스트
 - `key:my-widget-key` - Key로 찾기
+- `key:my-key[0]` - 첫 번째 매칭되는 Key
 - `type:ElevatedButton` - 위젯 타입으로 찾기
+- `type:TextField[2]` - 세 번째 매칭되는 위젯 타입
+
+**인덱스 사용**: 여러 개의 위젯이 매칭될 때 `[숫자]`를 추가하여 특정 순서의 위젯을 선택할 수 있습니다 (0부터 시작).
 
 지원되는 위젯 타입:
 - `ElevatedButton`, `TextButton`, `OutlinedButton`, `IconButton`
