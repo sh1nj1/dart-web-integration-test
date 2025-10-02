@@ -1,40 +1,20 @@
 {
-  "name": "Failing Test Suite for Screenshot Demo",
-  "baseUrl": "http://localhost:3000",
+  "name": "Screenshot Test Suite",
+  "baseUrl": "http://localhost:3001",
   "testCases": [
     {
-      "name": "Element Not Found Test",
-      "description": "테스트 실패를 유발하여 스크린샷을 확인하는 테스트",
-      "url": "http://localhost:3000/#/",
+      "name": "Intentional Failure Test",
+      "description": "Test that should fail to demonstrate screenshot capture",
+      "url": "http://localhost:3001/#/",
       "steps": [
         {
           "action": "wait",
-          "waitTime": 3000
-        },
-        {
-          "action": "click",
-          "selector": "#non-existent-element"
+          "waitTime": 2000
         },
         {
           "action": "assert_text",
-          "selector": "h1",
-          "expected": "This Will Fail"
-        }
-      ]
-    },
-    {
-      "name": "Wrong Text Assertion Test",
-      "description": "텍스트 검증 실패로 스크린샷을 촬영하는 테스트",
-      "url": "http://localhost:3000/#/about",
-      "steps": [
-        {
-          "action": "wait",
-          "waitTime": 3000
-        },
-        {
-          "action": "assert_text",
-          "selector": "h1",
-          "expected": "Wrong Title Text"
+          "selector": "text:This text does not exist",
+          "expected": "This text does not exist"
         }
       ]
     }
