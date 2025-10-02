@@ -17,6 +17,14 @@ void main(List<String> args) async {
   print('Running Flutter integration tests with DSL: $testDslFile');
   print('Target app directory: $targetAppDir');
 
+  // Check if ChromeDriver is installed
+  if (!await _isChromeDriverInstalled()) {
+    print('\n❌ ChromeDriver not found!');
+    print('Please install ChromeDriver by running:');
+    print('  dart run bin/install_chromedriver.dart\n');
+    exit(1);
+  }
+
   // Initialize ChromeDriver manager
   final chromeDriverManager = ChromeDriverManager();
   bool chromeDriverStartedByUs = false;
@@ -253,6 +261,26 @@ Future<void> _killChromeProcesses() async {
     }
   } catch (e) {
     // Ignore errors if no processes found
+  }
+}
+
+Future<bool> _isChromeDriverInstalled() async {
+  // Check in drivers/ directory
+  final localDriver = File(Platform.isWindows ? 'drivers/chromedriver.exe' : 'drivers/chromedriver');
+  if (await localDriver.exists()) {
+    return true;
+  }
+
+  // Check in system PATH
+  try {
+    final result = await Process.run(
+      Platform.isWindows ? 'where' : 'which',
+      ['chromedriver'],
+      runInShell: true,
+    );
+    return result.exitCode == 0;
+  } catch (e) {
+    return false;
   }
 }
 
