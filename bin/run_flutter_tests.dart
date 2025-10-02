@@ -238,20 +238,10 @@ void main(List<String> args) async {
         process.exitCode,
       ]);
       
-      // Track results - file level based on case results
-      totalPassedCases = passedCases;
-      totalFailedCases = failedCases;
-      
-      if (totalFailedCases == 0 && totalPassedCases > 0) {
-        // All cases passed - all files passed
-        totalPassedFiles = uniqueFiles.length;
-        totalFailedFiles = 0;
-      } else {
-        // Some cases failed - all files marked as failed
-        totalPassedFiles = 0;
-        totalFailedFiles = uniqueFiles.length;
-        failedFiles.addAll(uniqueFiles);
-      }
+      // Track file-level results based on which files had failures
+      totalFailedFiles = filesWithFailures.length;
+      totalPassedFiles = uniqueFiles.length - totalFailedFiles;
+      failedFiles.addAll(filesWithFailures);
       
       // Kill any remaining Chrome processes
       await _killChromeProcesses();
