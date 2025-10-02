@@ -15,7 +15,7 @@ void main(List<String> args) async {
     log('  dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml');
     log('  dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"');
     log('  dart run bin/run_flutter_tests.dart "test_dsl/**/*.yaml"');
-    log('\nNote: Quote the pattern to prevent shell expansion!');
+    log('Note: Quote the pattern to prevent shell expansion!');
     exit(1);
   }
 
@@ -161,10 +161,10 @@ void main(List<String> args) async {
       await File(generatedFile).copy('$targetAppDir/integration_test/test_dsl_data.dart');
 
       // Run Flutter driver test for web (once for all tests)
-      log('\n${'=' * 60}');
+      log('=' * 60);
       log('Running merged test suite with ${uniqueFiles.length} file(s)');
       log('=' * 60);
-      log('Target app directory: $targetAppDir\n');
+      log('Target app directory: $targetAppDir');
       log('Starting Flutter driver...');
       
       // Prepare Chrome arguments for CI environment
@@ -274,7 +274,7 @@ void main(List<String> args) async {
       await _killChromeProcesses();
       
       // Clean up symlinks and restore backups
-      log('\nCleaning up test infrastructure...');
+      log('Cleaning up test infrastructure...');
       await _deleteSymlink('$targetAppDir/test_driver');
       await _deleteSymlink('$targetAppDir/integration_test');
       
@@ -306,14 +306,14 @@ void main(List<String> args) async {
   }
 
   // Print overall summary
-  log('\n${'=' * 60}');
+  log('=' * 60);
   log('OVERALL TEST SUMMARY');
   log('=' * 60);
   log('Test Files: ${uniqueFiles.length} (Passed: $totalPassedFiles, Failed: $totalFailedFiles)');
   log('Test Cases: ${totalPassedCases + totalFailedCases} (Passed: $totalPassedCases, Failed: $totalFailedCases)');
   
   if (failedFiles.isNotEmpty) {
-    log('\nFailed test files:');
+    log('Failed test files:');
     for (final file in failedFiles) {
       log('  ✗ $file');
     }

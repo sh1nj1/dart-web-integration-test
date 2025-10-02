@@ -53,7 +53,7 @@ void main() {
           log('=' * 60);
         }
         
-        log('\nExecuting test case: ${testCase['description']}');
+        log('Running test case: ${testCase['description']}');
         
         try {
           // Execute steps
@@ -73,17 +73,17 @@ void main() {
             }
           }
 
-          log('✓ Test case "${testCase['description']}" passed');
+          log('✅ Test case "${testCase['description']}" passed');
           passed++;
         } catch (e) {
-          log('✗ Test case "${testCase['description']}" failed');
+          log('❌ Test case "${testCase['description']}" failed');
           failed++;
           failedTests.add(testCase['description']);
         }
       }
       
       // Print test summary
-      log('\n' + '=' * 60);
+      log('=' * 60);
       log('TEST SUMMARY');
       log('=' * 60);
       log('Total: ${passed + failed}');
