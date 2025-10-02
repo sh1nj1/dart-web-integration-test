@@ -46,17 +46,6 @@ void main() {
         log('\nExecuting test case: ${testCase['name']}');
         
         try {
-          // Navigate to URL if specified by clicking the navigation button
-          if (testCase['url'] != null) {
-            final url = testCase['url'] as String;
-            final route = _extractRoute(url);
-            if (route.isNotEmpty && route != '/') {
-              // Navigate by clicking the appropriate button
-              await _navigateToRoute(tester, route);
-              await tester.pumpAndSettle();
-            }
-          }
-
           // Execute steps
           final steps = testCase['steps'] as List;
           for (int i = 0; i < steps.length; i++) {
