@@ -94,8 +94,10 @@ void main(List<String> args) async {
   bool chromeDriverStartedByUs = false;
 
   // Track test results
-  int totalPassed = 0;
-  int totalFailed = 0;
+  int totalPassedFiles = 0;
+  int totalFailedFiles = 0;
+  int totalPassedCases = 0;
+  int totalFailedCases = 0;
   final failedFiles = <String>[];
 
   try {
@@ -196,23 +198,36 @@ void main(List<String> args) async {
     // Monitor output and kill process when tests complete
     final completer = Completer<int>();
     var testsFailed = false;
+    int passedCases = 0;
+    int failedCases = 0;
     
     process.stdout.transform(SystemEncoding().decoder).listen((data) {
-      stdout.write(data);
+    stdout.write(data);
+    
+    // Parse test case results from dsl_runner output
+    final passedMatch = RegExp(r'\[DSL\] Passed: (\d+)').firstMatch(data);
+    if (passedMatch != null) {
+      passedCases = int.parse(passedMatch.group(1)!);
+    }
+    final failedMatch = RegExp(r'\[DSL\] Failed: (\d+)').firstMatch(data);
+    if (failedMatch != null) {
+    failedCases = int.parse(failedMatch.group(1)!);
+    }
+    
       if (data.contains('All tests passed!')) {
-        // Tests passed, kill the process
-        Future.delayed(Duration(milliseconds: 500), () {
-          process.kill();
-          if (!completer.isCompleted) completer.complete(0);
-        });
-      } else if (data.contains('Some tests failed')) {
-        testsFailed = true;
-        Future.delayed(Duration(milliseconds: 500), () {
-          process.kill();
-          if (!completer.isCompleted) completer.complete(1);
-        });
-      }
-    });
+          // Tests passed, kill the process
+          Future.delayed(Duration(milliseconds: 500), () {
+            process.kill();
+            if (!completer.isCompleted) completer.complete(0);
+          });
+        } else if (data.contains('Some tests failed')) {
+          testsFailed = true;
+          Future.delayed(Duration(milliseconds: 500), () {
+            process.kill();
+            if (!completer.isCompleted) completer.complete(1);
+          });
+        }
+      });
     
     process.stderr.transform(SystemEncoding().decoder).listen(stderr.write);
 
@@ -223,10 +238,13 @@ void main(List<String> args) async {
       ]);
       
       // Track results
+      totalPassedCases += passedCases;
+      totalFailedCases += failedCases;
+      
       if (exitCode == 0) {
-        totalPassed++;
+        totalPassedFiles++;
       } else {
-        totalFailed++;
+        totalFailedFiles++;
         failedFiles.add(testDslFile);
       }
       
@@ -243,7 +261,7 @@ void main(List<String> args) async {
       await _restoreBackup('$targetAppDir/integration_test');
     } catch (e) {
       log('Error: $e');
-      totalFailed++;
+      totalFailedFiles++;
       failedFiles.add(testDslFile);
       
       // Clean up on error
@@ -270,9 +288,8 @@ void main(List<String> args) async {
   log('\n${'=' * 60}');
   log('OVERALL TEST SUMMARY');
   log('=' * 60);
-  log('Total test files: ${uniqueFiles.length}');
-  log('Passed: $totalPassed');
-  log('Failed: $totalFailed');
+  log('Test Files: ${uniqueFiles.length} (Passed: $totalPassedFiles, Failed: $totalFailedFiles)');
+  log('Test Cases: ${totalPassedCases + totalFailedCases} (Passed: $totalPassedCases, Failed: $totalFailedCases)');
   
   if (failedFiles.isNotEmpty) {
     log('\nFailed test files:');
@@ -283,7 +300,7 @@ void main(List<String> args) async {
   log('=' * 60);
   
   // Exit with appropriate code
-  exit(totalFailed > 0 ? 1 : 0);
+  exit(totalFailedFiles > 0 ? 1 : 0);
 }
 
 Future<List<String>> _resolveTestFiles(String pattern) async {
