@@ -171,7 +171,7 @@ testCases:
 
 ### 셀렉터 형식
 
-새로운 명시적 셀렉터 형식 (권장):
+명시적 셀렉터 형식:
 - `text:Button Text` - 정확한 텍스트로 찾기
 - `textContains:partial text` - 부분 텍스트로 찾기
 - `key:my-widget-key` - Key로 찾기
@@ -181,10 +181,6 @@ testCases:
 - `ElevatedButton`, `TextButton`, `OutlinedButton`, `IconButton`
 - `TextField`, `TextFormField`
 - `Checkbox`, `Radio`, `Switch`
-
-레거시 셀렉터 (하위 호환성):
-- `flt-semantics[aria-label='text']` - 자동으로 `text:text`로 변환
-- `[key='my-key']` - 자동으로 `key:my-key`로 변환
 
 ## 스크린샷 기능
 

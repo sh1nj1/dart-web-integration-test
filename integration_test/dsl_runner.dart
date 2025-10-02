@@ -206,12 +206,10 @@ Future<void> _assertVisible(WidgetTester tester, Map<String, dynamic> step) asyn
 /// 
 /// Supported selector formats:
 /// - text:Button Text - find by text
+/// - textContains:partial - find by partial text
 /// - key:my-key - find by key
 /// - type:ElevatedButton - find by widget type
-/// - index:2 - find by index (combined with type)
-/// - Contains patterns for backward compatibility
 Finder _parseFinder(WidgetTester tester, String selector) {
-  // New explicit selector format: type:value
   if (selector.contains(':')) {
     final parts = selector.split(':');
     final selectorType = parts[0];
@@ -228,27 +226,11 @@ Finder _parseFinder(WidgetTester tester, String selector) {
         return _findByTypeName(selectorValue);
       default:
         print('  Warning: Unknown selector type "$selectorType"');
+        return find.text(selector); // Fallback to text search
     }
   }
   
-  // Legacy/implicit selectors for backward compatibility
-  // Try to guess the intent from the selector string
-  
-  // Check for aria-label pattern (semantic web selectors)
-  if (selector.contains('aria-label')) {
-    final ariaLabel = _extractAriaLabel(selector);
-    return find.text(ariaLabel);
-  }
-  
-  // Check for key pattern
-  if (selector.contains('[key=')) {
-    final keyMatch = RegExp(r"\[key='([^']+)'\]").firstMatch(selector);
-    if (keyMatch != null) {
-      return find.byKey(Key(keyMatch.group(1)!));
-    }
-  }
-  
-  // Default: try to find as text
+  // No colon found - treat as plain text selector
   return find.text(selector);
 }
 
