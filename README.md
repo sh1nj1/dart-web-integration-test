@@ -39,23 +39,11 @@ dart pub get
 ```
 
 ### 2. ChromeDriver 설치
-Puppeteer를 사용하여 Chrome 버전에 맞는 ChromeDriver를 자동으로 설치:
+설치 스크립트를 실행하여 현재 Chrome 버전에 맞는 ChromeDriver를 자동으로 설치:
 
 ```bash
-# ChromeDriver 최신 버전 설치
-npx @puppeteer/browsers install chromedriver@latest
-
-# drivers 디렉토리 생성 및 심볼릭 링크 설정
-mkdir -p drivers
-CHROMEDRIVER_PATH=$(find chromedriver -type f -name "chromedriver" | head -1)
-ln -sf "$(pwd)/$CHROMEDRIVER_PATH" drivers/chromedriver
-chmod +x drivers/chromedriver
-
-# 설치 확인
-drivers/chromedriver --version
+./bin/install_chromedriver.sh
 ```
-
-**또는** [ChromeDriver 다운로드 페이지](https://chromedriver.chromium.org/)에서 수동으로 다운로드하여 `drivers/` 폴더에 저장
 
 ### 3. Flutter 웹 앱 실행
 ```bash
