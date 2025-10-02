@@ -41,8 +41,18 @@ void main() {
       int passed = 0;
       int failed = 0;
       final failedTests = <String>[];
+      String? currentFile;
 
       for (final testCase in testCases) {
+        // Log when switching to a new source file
+        final sourceFile = testCase['_sourceFile'] as String?;
+        if (sourceFile != null && sourceFile != currentFile) {
+          currentFile = sourceFile;
+          log('\n${'=' * 60}');
+          log('Running tests from: $sourceFile');
+          log('=' * 60);
+        }
+        
         log('\nExecuting test case: ${testCase['name']}');
         
         try {
