@@ -238,13 +238,17 @@ void main(List<String> args) async {
         process.exitCode,
       ]);
       
-      // Track results
+      // Track results - file level based on case results
       totalPassedCases = passedCases;
       totalFailedCases = failedCases;
       
-      if (exitCode == 0) {
+      if (totalFailedCases == 0 && totalPassedCases > 0) {
+        // All cases passed - all files passed
         totalPassedFiles = uniqueFiles.length;
+        totalFailedFiles = 0;
       } else {
+        // Some cases failed - all files marked as failed
+        totalPassedFiles = 0;
         totalFailedFiles = uniqueFiles.length;
         failedFiles.addAll(uniqueFiles);
       }
