@@ -86,16 +86,13 @@ dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/a
 
 ### 다른 Flutter 앱에서 사용하기
 
-1. **app_config.dart 생성**: `integration_test/app_config.dart.template`을 복사하여 앱별 설정 생성
-   ```dart
-   // integration_test/app_config.dart
-   import 'package:flutter_test/flutter_test.dart';
-   import 'package:your_app/main.dart' as app;
-
-   Future<void> startApp(WidgetTester tester) async {
-     app.main();
-     await tester.pumpAndSettle();
-   }
+1. add integration_test dependency
+   ```yaml
+   dev_dependencies:
+     flutter_test:
+       sdk: flutter
+     integration_test:
+       sdk: flutter
    ```
 
 2. **위젯에 Key 추가**: 테스트할 위젯에 식별 가능한 Key 추가
@@ -115,7 +112,7 @@ dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/a
 
 4. **테스트 실행**:
    ```bash
-   dart run bin/run_flutter_tests.dart my-test.yaml /path/to/your/flutter/app
+   dart run bin/run_flutter_tests.dart my-test.yaml --target-app /path/to/your/flutter/app
    ```
 
 
