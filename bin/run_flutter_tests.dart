@@ -123,19 +123,8 @@ void main(List<String> args) async {
       log('ChromeDriver already running, using existing instance...');
     }
 
-    // Run tests for each file
-    for (int fileIndex = 0; fileIndex < uniqueFiles.length; fileIndex++) {
-      final testDslFile = uniqueFiles[fileIndex];
-      final absolutePath = File(testDslFile).absolute.path;
-
-      log('\n${'=' * 60}');
-      log('Running test file ${fileIndex + 1}/${uniqueFiles.length}: $testDslFile');
-      log('=' * 60);
-      log('Target app directory: $targetAppDir\n');
-
-      try {
-      
-      // Create symlinks instead of copying files (keeps target app clean)
+    // Create symlinks once for all tests
+    try {
       log('Creating test infrastructure symlinks...');
       final currentDir = Directory.current.absolute.path;
       
@@ -153,8 +142,8 @@ void main(List<String> args) async {
         log('You may need to create app_config.dart for app-specific initialization.');
       }
       
-      // Generate test DSL as Dart code (for web compatibility)
-      log('Generating test DSL code...');
+      // Generate merged test DSL code from all test files
+      log('Generating merged test DSL code from ${uniqueFiles.length} file(s)...');
       
       // Create build directory for generated files
       final buildDir = Directory('$currentDir/build/generated');
@@ -163,84 +152,85 @@ void main(List<String> args) async {
       }
       
       final generatedFile = '$currentDir/build/generated/test_dsl_data.dart';
-      await _generateTestDslCode(testDslFile, generatedFile);
+      await _generateMergedTestDslCode(uniqueFiles, generatedFile);
       
       // Copy generated file to integration_test symlink
       await File(generatedFile).copy('$targetAppDir/integration_test/test_dsl_data.dart');
 
-    // Run Flutter driver test for web
-    log('Starting Flutter driver...');
-    
-    // Prepare Chrome arguments for CI environment
-    final chromeArgs = Platform.environment['CHROME_ARGS'] ?? '';
-    final chromeExecutable = Platform.environment['CHROME_EXECUTABLE'];
-    
-    final args = [
-      'drive',
-      '--driver=test_driver/integration_test.dart',
-      '--target=integration_test/dsl_runner.dart',
-      '-d',
-      'chrome',
-      '--dart-define=TEST_DSL_PATH=$absolutePath',
-    ];
-    
-    // Specify Chrome binary if provided (for CI)
-    if (chromeExecutable != null && chromeExecutable.isNotEmpty) {
-      args.add('--chrome-binary=$chromeExecutable');
-      log('Using Chrome binary: $chromeExecutable');
-    }
-    
-    // Add Chrome arguments as web browser flags if provided
-    if (chromeArgs.isNotEmpty) {
-      for (final arg in chromeArgs.split(' ')) {
-        if (arg.isNotEmpty) {
-          args.add('--web-browser-flag=$arg');
+      // Run Flutter driver test for web (once for all tests)
+      log('\n${'=' * 60}');
+      log('Running merged test suite with ${uniqueFiles.length} file(s)');
+      log('=' * 60);
+      log('Target app directory: $targetAppDir\n');
+      log('Starting Flutter driver...');
+      
+      // Prepare Chrome arguments for CI environment
+      final chromeArgs = Platform.environment['CHROME_ARGS'] ?? '';
+      final chromeExecutable = Platform.environment['CHROME_EXECUTABLE'];
+      
+      final args = [
+        'drive',
+        '--driver=test_driver/integration_test.dart',
+        '--target=integration_test/dsl_runner.dart',
+        '-d',
+        'chrome',
+      ];
+      
+      // Specify Chrome binary if provided (for CI)
+      if (chromeExecutable != null && chromeExecutable.isNotEmpty) {
+        args.add('--chrome-binary=$chromeExecutable');
+        log('Using Chrome binary: $chromeExecutable');
+      }
+      
+      // Add Chrome arguments as web browser flags if provided
+      if (chromeArgs.isNotEmpty) {
+        for (final arg in chromeArgs.split(' ')) {
+          if (arg.isNotEmpty) {
+            args.add('--web-browser-flag=$arg');
+          }
         }
       }
-    }
-    
-    final process = await Process.start(
-      'flutter',
-      args,
-      workingDirectory: targetAppDir,
-      runInShell: true,
-    );
+      
+      final process = await Process.start(
+        'flutter',
+        args,
+        workingDirectory: targetAppDir,
+        runInShell: true,
+      );
 
-    // Monitor output and kill process when tests complete
-    final completer = Completer<int>();
-    var testsFailed = false;
-    int passedCases = 0;
-    int failedCases = 0;
-    
-    process.stdout.transform(SystemEncoding().decoder).listen((data) {
-    stdout.write(data);
-    
-    // Parse test case results from dsl_runner output
-    final passedMatch = RegExp(r'\[DSL\] Passed: (\d+)').firstMatch(data);
-    if (passedMatch != null) {
-      passedCases = int.parse(passedMatch.group(1)!);
-    }
-    final failedMatch = RegExp(r'\[DSL\] Failed: (\d+)').firstMatch(data);
-    if (failedMatch != null) {
-    failedCases = int.parse(failedMatch.group(1)!);
-    }
-    
-      if (data.contains('All tests passed!')) {
+      // Monitor output and kill process when tests complete
+      final completer = Completer<int>();
+      int passedCases = 0;
+      int failedCases = 0;
+      
+      process.stdout.transform(SystemEncoding().decoder).listen((data) {
+        stdout.write(data);
+        
+        // Parse test case results from dsl_runner output
+        final passedMatch = RegExp(r'\[DSL\] Passed: (\d+)').firstMatch(data);
+        if (passedMatch != null) {
+          passedCases = int.parse(passedMatch.group(1)!);
+        }
+        final failedMatch = RegExp(r'\[DSL\] Failed: (\d+)').firstMatch(data);
+        if (failedMatch != null) {
+          failedCases = int.parse(failedMatch.group(1)!);
+        }
+        
+        if (data.contains('All tests passed!')) {
           // Tests passed, kill the process
           Future.delayed(Duration(milliseconds: 500), () {
             process.kill();
             if (!completer.isCompleted) completer.complete(0);
           });
         } else if (data.contains('Some tests failed')) {
-          testsFailed = true;
           Future.delayed(Duration(milliseconds: 500), () {
             process.kill();
             if (!completer.isCompleted) completer.complete(1);
           });
         }
       });
-    
-    process.stderr.transform(SystemEncoding().decoder).listen(stderr.write);
+      
+      process.stderr.transform(SystemEncoding().decoder).listen(stderr.write);
 
       // Wait for either manual completion or process exit
       final exitCode = await Future.any([
@@ -249,14 +239,14 @@ void main(List<String> args) async {
       ]);
       
       // Track results
-      totalPassedCases += passedCases;
-      totalFailedCases += failedCases;
+      totalPassedCases = passedCases;
+      totalFailedCases = failedCases;
       
       if (exitCode == 0) {
-        totalPassedFiles++;
+        totalPassedFiles = uniqueFiles.length;
       } else {
-        totalFailedFiles++;
-        failedFiles.add(testDslFile);
+        totalFailedFiles = uniqueFiles.length;
+        failedFiles.addAll(uniqueFiles);
       }
       
       // Kill any remaining Chrome processes
@@ -272,8 +262,8 @@ void main(List<String> args) async {
       await _restoreBackup('$targetAppDir/integration_test');
     } catch (e) {
       log('Error: $e');
-      totalFailedFiles++;
-      failedFiles.add(testDslFile);
+      totalFailedFiles = uniqueFiles.length;
+      failedFiles.addAll(uniqueFiles);
       
       // Clean up on error
       await _deleteSymlink('$targetAppDir/test_driver');
@@ -283,7 +273,6 @@ void main(List<String> args) async {
       await _restoreBackup('$targetAppDir/test_driver');
       await _restoreBackup('$targetAppDir/integration_test');
     }
-  }
 
     // Stop ChromeDriver only if we started it
     if (chromeDriverStartedByUs) {
@@ -384,6 +373,60 @@ Future<void> _deleteSymlink(String path) async {
     // Fallback: if it's a directory (not a symlink), delete it
     await Directory(path).delete(recursive: true);
   }
+}
+
+Future<void> _generateMergedTestDslCode(List<String> dslPaths, String outputPath) async {
+  final mergedTests = <Map<String, dynamic>>[];
+  
+  for (final dslPath in dslPaths) {
+    final dslFile = File(dslPath);
+    final dslContent = await dslFile.readAsString();
+    
+    // Convert to JSON if input is YAML
+    Map<String, dynamic> data;
+    if (dslPath.endsWith('.yaml') || dslPath.endsWith('.yml')) {
+      final yaml = loadYaml(dslContent);
+      data = _convertYamlToMap(yaml);
+    } else {
+      data = jsonDecode(dslContent);
+    }
+    
+    // Add _sourceFile to each test case
+    if (data['tests'] is List) {
+      for (final test in data['tests']) {
+        if (test is Map) {
+          test['_sourceFile'] = dslPath;
+        }
+      }
+    }
+    
+    // Collect all tests
+    if (data['tests'] is List) {
+      mergedTests.addAll((data['tests'] as List).cast<Map<String, dynamic>>());
+    }
+  }
+  
+  // Create merged test suite
+  final mergedData = {
+    'name': 'Merged Test Suite',
+    'tests': mergedTests,
+  };
+  
+  final jsonContent = jsonEncode(mergedData);
+  
+  // Escape the JSON content for Dart string literal
+  final escapedContent = jsonContent
+      .replaceAll(r'\', r'\\')
+      .replaceAll(r"'", r"\'");
+  
+  final dartCode = '// Auto-generated file - do not edit\n'
+      '// Generated from ${dslPaths.length} test file(s)\n\n'
+      "const String testDslJson = '''\n"
+      '$escapedContent\n'
+      "''';\n";
+  
+  final outputFile = File(outputPath);
+  await outputFile.writeAsString(dartCode);
 }
 
 Future<void> _generateTestDslCode(String dslPath, String outputPath) async {
