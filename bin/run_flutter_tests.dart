@@ -213,8 +213,9 @@ void main(List<String> args) async {
         final sourceMatch = RegExp(r'\[DSL\] Running tests from: (.+)').firstMatch(data);
         if (sourceMatch != null) {
           // Save previous file's failure status
-          if (currentSourceFile != null && currentFileHadFailure) {
-            filesWithFailures.add(currentSourceFile);
+          final prevFile = currentSourceFile;
+          if (prevFile != null && currentFileHadFailure) {
+            filesWithFailures.add(prevFile);
           }
           currentSourceFile = sourceMatch.group(1);
           currentFileHadFailure = false;
@@ -552,6 +553,4 @@ Future<void> _restoreBackup(String path) async {
   
   if (await backupDir.exists()) {
     log('  Restoring backup: $backupPath -> $path');
-    await backupDir.rename(path);
-  }
-}
+    await ba
