@@ -99,6 +99,9 @@ void main(List<String> args) async {
   int totalPassedCases = 0;
   int totalFailedCases = 0;
   final failedFiles = <String>[];
+  final filesWithFailures = <String>{};
+  String? currentSourceFile;
+  bool currentFileHadFailure = false;
 
   try {
     // Check if ChromeDriver is already running
@@ -206,14 +209,36 @@ void main(List<String> args) async {
       process.stdout.transform(SystemEncoding().decoder).listen((data) {
         stdout.write(data);
         
+        // Track which source file we're running tests from
+        final sourceMatch = RegExp(r'\[DSL\] Running tests from: (.+)').firstMatch(data);
+        if (sourceMatch != null) {
+          // Save previous file's failure status
+          if (currentSourceFile != null && currentFileHadFailure) {
+            filesWithFailures.add(currentSourceFile);
+          }
+          currentSourceFile = sourceMatch.group(1);
+          currentFileHadFailure = false;
+        }
+        
+        // Track if current test case failed
+        if (data.contains('[DSL] ✗ Test case ') && data.contains('failed')) {
+          currentFileHadFailure = true;
+        }
+        
         // Parse test case results from dsl_runner output
         final passedMatch = RegExp(r'\[DSL\] Passed: (\d+)').firstMatch(data);
         if (passedMatch != null) {
           passedCases = int.parse(passedMatch.group(1)!);
+          totalPassedCases = passedCases;
         }
         final failedMatch = RegExp(r'\[DSL\] Failed: (\d+)').firstMatch(data);
         if (failedMatch != null) {
           failedCases = int.parse(failedMatch.group(1)!);
+          totalFailedCases = failedCases;
+          // Save last file's failure status
+          if (currentSourceFile != null && currentFileHadFailure) {
+            filesWithFailures.add(currentSourceFile);
+          }
         }
         
         if (data.contains('All tests passed!')) {
