@@ -51,15 +51,6 @@ dart run bin/install_chromedriver.dart
 # 또는 수동으로 ChromeDriver를 다운로드하여 drivers/chromedriver에 배치
 ```
 
-### 3. Flutter 웹 앱 실행
-```bash
-# test_target 디렉토리에서 Flutter 웹 앱 실행
-cd test_target
-flutter run -d chrome --web-port 3001
-```
-
-
-
 ## 사용법
 
 ### 테스트 실행

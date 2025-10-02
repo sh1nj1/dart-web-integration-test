@@ -51,14 +51,6 @@ dart run bin/install_chromedriver.dart
 # Or download ChromeDriver yourself and place it under drivers/chromedriver
 ```
 
-### 3. Run the Flutter web app
-```bash
-# Launch the Flutter web app from the test_target directory
-cd test_target
-flutter run -d chrome --web-port 3001
-```
-
-
 ## Usage
 
 ### Run tests
