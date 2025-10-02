@@ -11,17 +11,16 @@ x-common-steps:
     waitTime: 3000
 
 testCases:
-  - name: Test with Anchors
-    description: Demonstrate YAML anchor usage
+  - description: Demonstrate YAML anchor usage
     steps:
       - action: assert_text
-        selector: "text:Welcome to Test Target"
+        selector: "Welcome to Test Target"
         expected: Welcome to Test Target
       - action: click
-        selector: "text:About"
+        selector: "About"
       - action: assert_text
-        selector: "text:About Us"
+        selector: "About Us"
         expected: About Us
       - *wait-short
       - action: click
-        selector: "text:Home"
+        selector: "Home"

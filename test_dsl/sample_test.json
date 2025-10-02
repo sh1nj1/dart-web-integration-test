@@ -2,7 +2,6 @@
   "name": "Flutter Web Test Suite",
   "testCases": [
     {
-      "name": "Homepage Navigation Test",
       "description": "Test Flutter web app navigation and elements",
       "steps": [
         {
@@ -22,7 +21,6 @@
       ]
     },
     {
-      "name": "Contact Form Test",
       "description": "Test Flutter web contact form input and submission",
       "steps": [
         {
@@ -50,7 +48,7 @@
         },
         {
           "action": "assert_text",
-          "selector": "textContains:Thank you",
+          "selector": "contains:Thank you",
           "expected": "Thank you"
         }
       ]

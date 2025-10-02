@@ -120,8 +120,7 @@ YAML 형식으로 테스트를 작성합니다 (JSON 형식도 지원).
 ```yaml
 name: 테스트 스위트 이름
 testCases:
-  - name: 테스트 케이스 이름
-    description: 테스트 설명
+  - description: 테스트 설명
     steps:
       - action: click|type|wait|assert_text|assert_visible
         selector: "셀렉터 (필요시)"
@@ -148,7 +147,7 @@ x-common-steps:
     waitTime: 3000
 
 testCases:
-  - name: Example Test
+  - description: Example test with anchors
     steps:
       - *wait-long  # anchor 참조
       - action: click
