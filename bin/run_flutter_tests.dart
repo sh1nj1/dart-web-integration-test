@@ -376,7 +376,8 @@ Future<void> _deleteSymlink(String path) async {
 }
 
 Future<void> _generateMergedTestDslCode(List<String> dslPaths, String outputPath) async {
-  final mergedTests = <Map<String, dynamic>>[];
+  final mergedTestCases = <Map<String, dynamic>>[];
+  String suiteName = 'Merged Test Suite';
   
   for (final dslPath in dslPaths) {
     final dslFile = File(dslPath);
@@ -391,25 +392,26 @@ Future<void> _generateMergedTestDslCode(List<String> dslPaths, String outputPath
       data = jsonDecode(dslContent);
     }
     
-    // Add _sourceFile to each test case
-    if (data['tests'] is List) {
-      for (final test in data['tests']) {
-        if (test is Map) {
-          test['_sourceFile'] = dslPath;
-        }
-      }
+    // Use first file's name as suite name
+    if (dslPath == dslPaths.first) {
+      suiteName = data['name'] as String? ?? suiteName;
     }
     
-    // Collect all tests
-    if (data['tests'] is List) {
-      mergedTests.addAll((data['tests'] as List).cast<Map<String, dynamic>>());
+    // Collect testCases and add source file metadata
+    if (data['testCases'] is List) {
+      for (final testCase in (data['testCases'] as List)) {
+        if (testCase is Map<String, dynamic>) {
+          testCase['_sourceFile'] = dslPath;
+          mergedTestCases.add(testCase);
+        }
+      }
     }
   }
   
   // Create merged test suite
   final mergedData = {
-    'name': 'Merged Test Suite',
-    'tests': mergedTests,
+    'name': suiteName,
+    'testCases': mergedTestCases,
   };
   
   final jsonContent = jsonEncode(mergedData);
