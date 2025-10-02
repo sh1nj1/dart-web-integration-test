@@ -29,23 +29,17 @@ class TestStep {
 }
 
 class TestCase {
-  final String name;
   final String description;
-  final String? url;
   final List<TestStep> steps;
   
   TestCase({
-    required this.name,
     required this.description,
-    this.url,
     required this.steps,
   });
   
   factory TestCase.fromJson(Map<String, dynamic> json) {
     return TestCase(
-      name: json['name'] as String,
       description: json['description'] as String,
-      url: json['url'] as String?,
       steps: (json['steps'] as List)
           .map((step) => TestStep.fromJson(step as Map<String, dynamic>))
           .toList(),

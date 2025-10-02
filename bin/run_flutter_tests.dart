@@ -237,8 +237,9 @@ void main(List<String> args) async {
           failedCases = int.parse(failedMatch.group(1)!);
           totalFailedCases = failedCases;
           // Save last file's failure status
-          if (currentSourceFile != null && currentFileHadFailure) {
-            filesWithFailures.add(currentSourceFile);
+          final lastFile = currentSourceFile;
+          if (lastFile != null && currentFileHadFailure) {
+            filesWithFailures.add(lastFile);
           }
         }
         
@@ -553,4 +554,6 @@ Future<void> _restoreBackup(String path) async {
   
   if (await backupDir.exists()) {
     log('  Restoring backup: $backupPath -> $path');
-    await ba
+    await backupDir.rename(path);
+  }
+}

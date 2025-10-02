@@ -53,7 +53,7 @@ void main() {
           log('=' * 60);
         }
         
-        log('\nExecuting test case: ${testCase['name']}');
+        log('\nExecuting test case: ${testCase['description']}');
         
         try {
           // Execute steps
@@ -68,17 +68,17 @@ void main() {
               // Log failure (screenshot disabled for web compatibility)
               log('  ✗ Step failed: $e');
               // TODO: Re-enable when WebDriver screenshot works on web
-              // await _captureScreenshot(binding, testCase['name'], 'step_${i + 1}_${step['action']}_failure');
+              // await _captureScreenshot(binding, testCase['description'], 'step_${i + 1}_${step['action']}_failure');
               rethrow;
             }
           }
 
-          log('✓ Test case "${testCase['name']}" passed');
+          log('✓ Test case "${testCase['description']}" passed');
           passed++;
         } catch (e) {
-          log('✗ Test case "${testCase['name']}" failed');
+          log('✗ Test case "${testCase['description']}" failed');
           failed++;
-          failedTests.add(testCase['name']);
+          failedTests.add(testCase['description']);
         }
       }
       
