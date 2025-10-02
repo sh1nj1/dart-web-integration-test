@@ -43,7 +43,7 @@ void main() {
       final failedTests = <String>[];
 
       for (final testCase in testCases) {
-        log('\n' + Executing test case: ${testCase['name']}');
+        log('\nExecuting test case: ${testCase['name']}');
         
         try {
           // Navigate to URL if specified by clicking the navigation button
