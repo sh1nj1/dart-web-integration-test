@@ -89,46 +89,48 @@ void main(List<String> args) async {
     }
   }
 
-  // Run tests for each file
-  int totalPassed = 0;
-  int totalFailed = 0;
-  final failedFiles = <String>[];
+  // Initialize ChromeDriver manager once for all tests
+  final chromeDriverManager = ChromeDriverManager();
+  bool chromeDriverStartedByUs = false;
 
-  for (int fileIndex = 0; fileIndex < uniqueFiles.length; fileIndex++) {
-    final testDslFile = uniqueFiles[fileIndex];
-    final absolutePath = File(testDslFile).absolute.path;
-
-    log('\n${'=' * 60}');
-    log('Running test file ${fileIndex + 1}/${uniqueFiles.length}: $testDslFile');
-    log('=' * 60);
-    log('Target app directory: $targetAppDir\n');
-
-    // Initialize ChromeDriver manager
-    final chromeDriverManager = ChromeDriverManager();
-    bool chromeDriverStartedByUs = false;
-
-    try {
-      // Check if ChromeDriver is already running
-      final isRunning = await _isChromeDriverRunning();
+  try {
+    // Check if ChromeDriver is already running
+    final isRunning = await _isChromeDriverRunning();
+    
+    if (!isRunning) {
+      // Start ChromeDriver only if not already running
+      log('Starting ChromeDriver...');
+      await chromeDriverManager.startDriver();
+      chromeDriverStartedByUs = true;
       
-      if (!isRunning) {
-        // Start ChromeDriver only if not already running
-        log('Starting ChromeDriver...');
-        await chromeDriverManager.startDriver();
-        chromeDriverStartedByUs = true;
-        
-        // Wait and verify ChromeDriver is ready
-        log('Waiting for ChromeDriver to be ready...');
-        for (int i = 0; i < 10; i++) {
-          await Future.delayed(Duration(milliseconds: 500));
-          if (await _isChromeDriverRunning()) {
-            log('ChromeDriver is ready!');
-            break;
-          }
+      // Wait and verify ChromeDriver is ready
+      log('Waiting for ChromeDriver to be ready...');
+      for (int i = 0; i < 10; i++) {
+        await Future.delayed(Duration(milliseconds: 500));
+        if (await _isChromeDriverRunning()) {
+          log('ChromeDriver is ready!');
+          break;
         }
-      } else {
-        log('ChromeDriver already running, using existing instance...');
       }
+    } else {
+      log('ChromeDriver already running, using existing instance...');
+    }
+
+    // Run tests for each file
+    int totalPassed = 0;
+    int totalFailed = 0;
+    final failedFiles = <String>[];
+
+    for (int fileIndex = 0; fileIndex < uniqueFiles.length; fileIndex++) {
+      final testDslFile = uniqueFiles[fileIndex];
+      final absolutePath = File(testDslFile).absolute.path;
+
+      log('\n${'=' * 60}');
+      log('Running test file ${fileIndex + 1}/${uniqueFiles.length}: $testDslFile');
+      log('=' * 60);
+      log('Target app directory: $targetAppDir\n');
+
+      try {
       
       // Create symlinks instead of copying files (keeps target app clean)
       log('Creating test infrastructure symlinks...');
@@ -238,12 +240,6 @@ void main(List<String> args) async {
       // Restore backed up directories
       await _restoreBackup('$targetAppDir/test_driver');
       await _restoreBackup('$targetAppDir/integration_test');
-      
-      // Stop ChromeDriver only if we started it
-      if (chromeDriverStartedByUs) {
-        log('Stopping ChromeDriver...');
-        await chromeDriverManager.stopDriver();
-      }
     } catch (e) {
       log('Error: $e');
       totalFailed++;
@@ -256,11 +252,17 @@ void main(List<String> args) async {
       // Restore backups
       await _restoreBackup('$targetAppDir/test_driver');
       await _restoreBackup('$targetAppDir/integration_test');
-      
-      if (chromeDriverStartedByUs) {
-        await chromeDriverManager.stopDriver();
-      }
     }
+  }
+
+    // Stop ChromeDriver only if we started it
+    if (chromeDriverStartedByUs) {
+      log('Stopping ChromeDriver...');
+      await chromeDriverManager.stopDriver();
+    }
+  } catch (e) {
+    log('Fatal error: $e');
+    exit(1);
   }
 
   // Print overall summary
