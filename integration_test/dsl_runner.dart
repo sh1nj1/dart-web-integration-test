@@ -102,6 +102,24 @@ String _extractRoute(String url) {
   return fragment.isEmpty ? uri.path : fragment;
 }
 
+/// Wait for a finder to find at least one widget
+/// Returns the finder once it finds widgets, or throws after timeout
+Future<Finder> _waitForFinder(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 3),
+  Duration interval = const Duration(milliseconds: 100),
+}) async {
+  final DateTime endTime = DateTime.now().add(timeout);
+  while (DateTime.now().isBefore(endTime)) {
+    await tester.pump(interval);
+    if (finder.evaluate().isNotEmpty) {
+      return finder;
+    }
+  }
+  throw Exception('Timed out waiting for ${finder.description}');
+}
+
 Future<void> _executeStep(WidgetTester tester, Map<String, dynamic> step) async {
   final action = step['action'] as String;
 
@@ -144,7 +162,7 @@ Future<void> _clickElement(WidgetTester tester, Map<String, dynamic> step) async
   if (selector == null) return;
 
   final finder = _parseFinder(tester, selector);
-  expect(finder, findsWidgets);
+  await _waitForFinder(tester, finder);
   await tester.tap(finder.first);
 }
 
@@ -154,10 +172,10 @@ Future<void> _typeText(WidgetTester tester, Map<String, dynamic> step) async {
 
   final finder = selector != null 
       ? _parseFinder(tester, selector)
-      : find.byType(TextFormField).first;
+      : find.byType(TextFormField);
 
-  expect(finder, findsWidgets);
-  await tester.enterText(finder, value);
+  await _waitForFinder(tester, finder);
+  await tester.enterText(finder.first, value);
 }
 
 Future<void> _assertText(WidgetTester tester, Map<String, dynamic> step) async {
@@ -168,7 +186,7 @@ Future<void> _assertText(WidgetTester tester, Map<String, dynamic> step) async {
       ? _parseFinder(tester, selector)
       : find.text(expected);
 
-  expect(finder, findsWidgets);
+  await _waitForFinder(tester, finder);
   
   // Verify text content if a specific element was selected
   if (selector != null) {
