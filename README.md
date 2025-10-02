@@ -70,13 +70,16 @@ dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml
 dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"
 dart run bin/run_flutter_tests.dart "test_dsl/**/*.yaml"
 
+# 다른 Flutter 앱 테스트 (자동 app_config.dart 생성)
+dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../myapp/lib/main.dart
+dart run bin/run_flutter_tests.dart test_dsl/* --target-app /path/to/app/lib/main.dart
+
 # 추가 Flutter 인자 전달 (--dart-define 등)
 dart run bin/run_flutter_tests.dart test_dsl/* --dart-define flavor=local
-dart run bin/run_flutter_tests.dart test_dsl/* --dart-define API_URL=https://api.example.com
+dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../app/lib/main.dart --dart-define ENV=prod
 
-# 다른 Flutter 앱 테스트
+# 또는 앱 디렉토리 직접 지정 (수동 app_config.dart 필요)
 dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/app
-dart run bin/run_flutter_tests.dart "test_dsl/*.yaml" /path/to/app --dart-define ENV=prod
 ```
 
 **참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리에 대한 심볼릭 링크가 생성되고, 테스트 완료 후 자동으로 삭제됩니다.

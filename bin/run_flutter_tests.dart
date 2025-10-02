@@ -169,12 +169,9 @@ void main(List<String> args) async {
       await _createSymlink('$currentDir/test_driver', '$targetAppDir/test_driver');
       await _createSymlink('$currentDir/integration_test', '$targetAppDir/integration_test');
       
-      // Check if app_config.dart exists, if not create from template
-      final appConfigFile = File('$targetAppDir/integration_test/app_config.dart');
-      if (!await appConfigFile.exists()) {
-        log('Note: app_config.dart not found. Using default template.');
-        log('You may need to create app_config.dart for app-specific initialization.');
-      }
+      // Generate app_config.dart
+      log('Generating app_config.dart...');
+      await _generateAppConfig(targetAppDir, targetAppMain);
       
       // Generate merged test DSL code from all test files
       log('Generating merged test DSL code from ${uniqueFiles.length} file(s)...');
@@ -521,6 +518,49 @@ dynamic _convertYamlToMap(dynamic yaml) {
   } else {
     return yaml;
   }
+}
+
+Future<void> _generateAppConfig(String targetAppDir, String? targetAppMain) async {
+  final configPath = '$targetAppDir/integration_test/app_config.dart';
+  
+  // Determine the import path
+  String importPath;
+  String packageName;
+  
+  if (targetAppMain != null) {
+    // Extract package name from pubspec.yaml
+    final pubspecFile = File('$targetAppDir/pubspec.yaml');
+    if (await pubspecFile.exists()) {
+      final pubspecContent = await pubspecFile.readAsString();
+      final nameMatch = RegExp(r'^name:\s*(.+)$', multiLine: true).firstMatch(pubspecContent);
+      packageName = nameMatch?.group(1)?.trim() ?? 'app';
+    } else {
+      packageName = 'app';
+    }
+    
+    // Convert file path to package import
+    final mainFile = File(targetAppMain);
+    final relativePath = mainFile.path.replaceAll('$targetAppDir/', '');
+    importPath = 'package:$packageName/$relativePath';
+  } else {
+    // Default for test_target
+    packageName = 'test_target';
+    importPath = 'package:test_target/main.dart';
+  }
+  
+  final appConfig = '''// Auto-generated app configuration
+import 'package:flutter_test/flutter_test.dart';
+import '$importPath' as app;
+
+/// Initialize and start the app for testing
+Future<void> startApp(WidgetTester tester) async {
+  app.main();
+  await tester.pumpAndSettle();
+}
+''';
+  
+  await File(configPath).writeAsString(appConfig);
+  log('Generated app_config.dart with import: $importPath');
 }
 
 Future<void> _killChromeProcesses() async {
