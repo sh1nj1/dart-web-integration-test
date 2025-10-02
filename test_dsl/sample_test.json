@@ -5,6 +5,10 @@
       "description": "Test Flutter web app navigation and elements",
       "steps": [
         {
+          "action": "click",
+          "selector": "Home"
+        },
+        {
           "action": "assert_text",
           "selector": "Welcome to Test Target",
           "expected": "Welcome to Test Target"
