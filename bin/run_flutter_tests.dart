@@ -6,7 +6,7 @@ import '../lib/chrome_driver_manager.dart';
 
 void main(List<String> args) async {
   if (args.isEmpty) {
-    print('Usage: dart run bin/run_flutter_tests.dart <test-dsl-file> [target-app-dir]');
+    print('Usage: dart run bin/run_flutter_tests.dart <test_dsl_file> [target-app-dir]');
     exit(1);
   }
 

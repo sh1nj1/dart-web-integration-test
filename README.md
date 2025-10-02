@@ -11,7 +11,7 @@ dart-web-integration-test/
 │   └── test_dsl_parser.dart       # JSON/YAML 테스트 DSL 파서
 ├── bin/                          # 실행 파일
 │   └── run_flutter_tests.dart    # Flutter Integration 테스트 실행기
-├── test-dsl/                     # 테스트 DSL 파일들 (JSON/YAML)
+├── test_dsl/                     # 테스트 DSL 파일들 (JSON/YAML)
 │   ├── sample_test.json          # 샘플 테스트 케이스 (JSON)
 │   ├── sample_test.yaml          # 샘플 테스트 케이스 (YAML)
 │   ├── anchor_test.yaml          # YAML anchor 예제
@@ -56,10 +56,10 @@ flutter run -d chrome --web-port 3001
 
 ```bash
 # Flutter Integration Test 실행 (YAML 권장, JSON도 지원)
-dart run bin/run_flutter_tests.dart test-dsl/sample_test.yaml
+dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml
 
 # 다른 Flutter 앱 테스트
-dart run bin/run_flutter_tests.dart test-dsl/sample_test.yaml /path/to/flutter/app
+dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/app
 ```
 
 **참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리에 대한 심볼릭 링크가 생성되고, 테스트 완료 후 자동으로 삭제됩니다.
