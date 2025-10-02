@@ -261,7 +261,11 @@ Future<List<String>> _resolveTestFiles(String pattern) async {
   if (pattern.contains('*') || pattern.contains('?') || pattern.contains('[')) {
     // Use glob to find matching files
     final glob = Glob(pattern);
-    final files = await glob.list().where((entity) => entity is File).map((entity) => entity.path).toList();
+    final entities = glob.listSync();
+    final files = entities
+        .where((entity) => entity is File)
+        .map((entity) => entity.path)
+        .toList();
     files.sort(); // Sort for consistent ordering
     return files;
   } else {
