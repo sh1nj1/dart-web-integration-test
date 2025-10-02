@@ -12,6 +12,9 @@ import 'test_dsl_data.dart';
 // Otherwise, the app must be running before tests start
 import 'app_config.dart' as config;
 
+// Custom print function with [DSL] prefix
+void log(Object? message) => log('$message');
+
 /// Generic DSL test runner for Flutter integration tests
 /// 
 /// This runner does not depend on any specific app implementation.
@@ -27,7 +30,7 @@ void main() {
     setUpAll(() async {
       // Load test DSL from generated Dart code
       testSuite = jsonDecode(testDslJson);
-      print('[DSL] Loaded test suite: ${testSuite['name']}');
+      log('Loaded test suite: ${testSuite['name']}');
     });
 
     testWidgets('Run DSL tests', (WidgetTester tester) async {
@@ -40,7 +43,7 @@ void main() {
       final failedTests = <String>[];
 
       for (final testCase in testCases) {
-        print('\n[DSL] Executing test case: ${testCase['name']}');
+        log('\n' + Executing test case: ${testCase['name']}');
         
         try {
           // Navigate to URL if specified by clicking the navigation button
@@ -58,43 +61,43 @@ void main() {
           final steps = testCase['steps'] as List;
           for (int i = 0; i < steps.length; i++) {
             final step = steps[i];
-            print('[DSL]   Step ${i + 1}/${steps.length}: ${step['action']}');
+            log('  Step ${i + 1}/${steps.length}: ${step['action']}');
             
             try {
               await _executeStep(tester, step);
             } catch (e) {
               // Log failure (screenshot disabled for web compatibility)
-              print('[DSL]   ✗ Step failed: $e');
+              log('  ✗ Step failed: $e');
               // TODO: Re-enable when WebDriver screenshot works on web
               // await _captureScreenshot(binding, testCase['name'], 'step_${i + 1}_${step['action']}_failure');
               rethrow;
             }
           }
 
-          print('[DSL] ✓ Test case "${testCase['name']}" passed');
+          log('✓ Test case "${testCase['name']}" passed');
           passed++;
         } catch (e) {
-          print('[DSL] ✗ Test case "${testCase['name']}" failed');
+          log('✗ Test case "${testCase['name']}" failed');
           failed++;
           failedTests.add(testCase['name']);
         }
       }
       
       // Print test summary
-      print('\n[DSL] ' + '=' * 60);
-      print('[DSL] TEST SUMMARY');
-      print('[DSL] ' + '=' * 60);
-      print('[DSL] Total: ${passed + failed}');
-      print('[DSL] Passed: $passed');
-      print('[DSL] Failed: $failed');
+      log('\n' + ' + '=' * 60);
+      log('TEST SUMMARY');
+      log('' + '=' * 60);
+      log('Total: ${passed + failed}');
+      log('Passed: $passed');
+      log('Failed: $failed');
       if (failedTests.isNotEmpty) {
-        print('[DSL] ');
-        print('[DSL] Failed tests:');
+        log('');
+        log('Failed tests:');
         for (final test in failedTests) {
-          print('[DSL]   - $test');
+          log('  - $test');
         }
       }
-      print('[DSL] ' + '=' * 60);
+      log('' + '=' * 60);
       
       // Fail the test if any test case failed
       if (failed > 0) {
@@ -319,7 +322,7 @@ Future<void> _navigateToRoute(WidgetTester tester, String route) async {
     }
   }
   
-  print('[DSL]   Warning: Could not navigate to route "$route"');
+  log('  Warning: Could not navigate to route "$route"');
 }
 
 /// Capture screenshot on test failure
