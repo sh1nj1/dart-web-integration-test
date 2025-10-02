@@ -6,12 +6,10 @@ Chrome WebDriver를 사용한 Dart 웹 애플리케이션 integration test 프�
 
 ```
 dart-web-integration-test/
-├── lib/                          # 핵심 라이브러리 (Selenium 방식)
+├── lib/                          # 핵심 라이브러리
 │   ├── chrome_driver_manager.dart # ChromeDriver 관리
-│   ├── test_dsl_parser.dart       # JSON 테스트 DSL 파서
-│   └── test_executor.dart         # 테스트 실행 엔진
+│   └── test_dsl_parser.dart       # JSON 테스트 DSL 파서
 ├── bin/                          # 실행 파일
-│   ├── run_tests.dart            # Selenium 테스트 실행기
 │   └── run_flutter_tests.dart    # Flutter Integration 테스트 실행기
 ├── test-dsl/                     # 테스트 DSL JSON 파일들
 │   ├── sample_test.json          # 샘플 테스트 케이스
@@ -169,13 +167,6 @@ dart run bin/run_tests.dart test-dsl/sample_test.json
 - 모바일/데스크톱 플랫폼에서는 정상 작동할 수 있습니다
 - 향후 WebDriver 세션 문제가 해결되면 재활성화 가능합니다
 
-### Selenium Test (레거시)
-- Selenium 기반 테스트에서는 `screenshots/` 디렉토리에 PNG 파일로 저장됩니다
-- 단, CanvasKit 렌더러에서는 Selenium 자체가 작동하지 않습니다
-- 설정 옵션:
-  - `captureScreenshotsOnFailure`: 실패 시 스크린샷 촬영 (기본값: true)
-  - `captureStepScreenshots`: 모든 단계별 스크린샷 촬영 (기본값: false)
-
 ## 개발
 
-새로운 액션 추가는 `lib/test_executor.dart`의 `executeStep` 메서드를 수정하세요.
+새로운 액션을 추가하려면 `integration_test/dsl_runner.dart`의 `_executeStep` 함수를 수정하세요.
