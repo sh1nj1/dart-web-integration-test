@@ -106,12 +106,6 @@ void main() {
   });
 }
 
-String _extractRoute(String url) {
-  final uri = Uri.parse(url);
-  final fragment = uri.fragment;
-  return fragment.isEmpty ? uri.path : fragment;
-}
-
 /// Wait for a finder to find at least one widget
 /// Returns the finder once it finds widgets, or throws after timeout
 Future<Finder> _waitForFinder(
