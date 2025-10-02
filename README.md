@@ -126,9 +126,9 @@ testCases:
     description: 테스트 설명
     url: "선택적 URL (기본: baseUrl 사용)"
     steps:
-      - action: click|type|wait|assert_text|assert_visible|navigate
-        selector: "CSS 선택자 (필요시)"
-        value: 입력값 (type, navigate 액션용)
+      - action: click|type|wait|assert_text|assert_visible
+        selector: "셀렉터 (필요시)"
+        value: 입력값 (type 액션용)
         expected: 예상값 (assert 액션용)
         waitTime: 대기시간 (밀리초)
 ```
@@ -167,7 +167,6 @@ testCases:
 - `wait`: 지정된 시간 대기
 - `assert_text`: 텍스트 내용 검증
 - `assert_visible`: 요소 가시성 검증
-- `navigate`: 페이지 이동
 
 ### 셀렉터 형식
 

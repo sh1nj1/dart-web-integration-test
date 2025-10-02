@@ -144,11 +144,6 @@ Future<void> _executeStep(WidgetTester tester, Map<String, dynamic> step) async 
       await _assertVisible(tester, step);
       break;
 
-    case 'navigate':
-      final route = step['value'] as String;
-      await _navigateToRoute(tester, route);
-      await tester.pumpAndSettle();
-      break;
 
     default:
       print('  Warning: Unknown action "$action"');
@@ -272,34 +267,6 @@ String _extractText(Element element) {
   return '';
 }
 
-Future<void> _navigateToRoute(WidgetTester tester, String route) async {
-  // Extract route name from URL patterns
-  final routeName = route.replaceAll('/#', '').replaceAll('#', '');
-  
-  // Try to find and click navigation button by route name
-  // This assumes navigation buttons have text matching the route
-  final routeParts = routeName.split('/').where((p) => p.isNotEmpty).toList();
-  
-  if (routeParts.isEmpty) {
-    // Navigate to home
-    final finder = find.text('Home');
-    if (finder.evaluate().isNotEmpty) {
-      await tester.tap(finder.first);
-      return;
-    }
-  } else {
-    // Try to find button with capitalized route name
-    final routeText = routeParts.first[0].toUpperCase() + 
-                     routeParts.first.substring(1);
-    final finder = find.text(routeText);
-    if (finder.evaluate().isNotEmpty) {
-      await tester.tap(finder.first);
-      return;
-    }
-  }
-  
-  log('  Warning: Could not navigate to route "$route"');
-}
 
 /// Capture screenshot on test failure
 Future<void> _captureScreenshot(
