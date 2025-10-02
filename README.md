@@ -1,6 +1,6 @@
-# Dart Web Integration Test
+# Flutter Web Integration Test
 
-Chrome WebDriver를 사용한 Dart 웹 애플리케이션 integration test 프레임워크
+Chrome WebDriver를 사용한 Flutter 웹 애플리케이션 integration test 프레임워크
 
 ## 프로젝트 구조
 
