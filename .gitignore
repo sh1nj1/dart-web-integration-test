@@ -28,3 +28,7 @@ screenshots/
 
 # Cleanup script backup
 cleanup_history.sh
+
+# Generated files
+integration_test/app_config.dart
+integration_test/test_dsl_data.dart
