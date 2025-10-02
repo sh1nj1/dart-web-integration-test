@@ -176,6 +176,8 @@ testCases:
 - `contains:partial[1]` - 두 번째 매칭되는 부분 텍스트
 - `key:my-widget-key` - Key로 찾기
 - `key:my-key[0]` - 첫 번째 매칭되는 Key
+- `label:Submit Button` - Semantics 라벨로 찾기
+- `label:Submit[0]` - 첫 번째 매칭되는 Semantics 라벨
 - `type:ElevatedButton` - 위젯 타입으로 찾기
 - `type:TextField[2]` - 세 번째 매칭되는 위젯 타입
 
