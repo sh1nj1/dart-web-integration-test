@@ -518,33 +518,31 @@ dynamic _convertYamlToMap(dynamic yaml) {
   }
 }
 
-Future<void> _generateAppConfig(String targetAppDir, String? targetAppMain) async {
+Future<void> _generateAppConfig(String targetAppDir, String? targetAppSpecified) async {
   final configPath = '$targetAppDir/integration_test/app_config.dart';
   
-  // Determine the import path
-  String importPath;
+  // Extract package name from pubspec.yaml
+  final pubspecFile = File('$targetAppDir/pubspec.yaml');
   String packageName;
   
-  if (targetAppMain != null) {
-    // Extract package name from pubspec.yaml
-    final pubspecFile = File('$targetAppDir/pubspec.yaml');
-    if (await pubspecFile.exists()) {
-      final pubspecContent = await pubspecFile.readAsString();
-      final nameMatch = RegExp(r'^name:\s*(.+)$', multiLine: true).firstMatch(pubspecContent);
-      packageName = nameMatch?.group(1)?.trim() ?? 'app';
-    } else {
-      packageName = 'app';
-    }
-    
-    // Convert file path to package import
-    final mainFile = File(targetAppMain);
-    final relativePath = mainFile.path.replaceAll('$targetAppDir/', '');
-    importPath = 'package:$packageName/$relativePath';
+  if (await pubspecFile.exists()) {
+    final pubspecContent = await pubspecFile.readAsString();
+    final nameMatch = RegExp(r'^name:\s*(.+)$', multiLine: true).firstMatch(pubspecContent);
+    packageName = nameMatch?.group(1)?.trim() ?? 'app';
   } else {
-    // Default for test_target
-    packageName = 'test_target';
-    importPath = 'package:test_target/main.dart';
+    log('❌ pubspec.yaml not found in $targetAppDir');
+    exit(1);
   }
+  
+  // Verify lib/main.dart exists
+  final mainDartFile = File('$targetAppDir/lib/main.dart');
+  if (!await mainDartFile.exists()) {
+    log('❌ lib/main.dart not found in $targetAppDir');
+    exit(1);
+  }
+  
+  // Use lib/main.dart as the entry point
+  final importPath = 'package:$packageName/main.dart';
   
   final appConfig = '''// Auto-generated app configuration
 import 'package:flutter_test/flutter_test.dart';
