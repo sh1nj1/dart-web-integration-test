@@ -1,66 +1,6 @@
 // Auto-generated file - do not edit
-// Generated from: test_dsl/sample_test.json
+// Generated from 3 test file(s)
 
 const String testDslJson = '''
-{
-  "name": "Flutter Web Test Suite",
-  "baseUrl": "http://localhost:3001",
-  "testCases": [
-    {
-      "name": "Homepage Navigation Test",
-      "description": "Test Flutter web app navigation and elements",
-      "steps": [
-        {
-          "action": "assert_text",
-          "selector": "text:Welcome to Test Target",
-          "expected": "Welcome to Test Target"
-        },
-        {
-          "action": "click",
-          "selector": "text:About"
-        },
-        {
-          "action": "assert_text",
-          "selector": "text:About Us",
-          "expected": "About Us"
-        }
-      ]
-    },
-    {
-      "name": "Contact Form Test",
-      "description": "Test Flutter web contact form input and submission",
-      "steps": [
-        {
-          "action": "click",
-          "selector": "text:Contact"
-        },
-        {
-          "action": "type",
-          "selector": "key:name-input",
-          "value": "Test User"
-        },
-        {
-          "action": "type",
-          "selector": "key:email-input",
-          "value": "test@example.com"
-        },
-        {
-          "action": "type",
-          "selector": "key:message-input",
-          "value": "This is a test message from integration test"
-        },
-        {
-          "action": "click",
-          "selector": "text:Send Message"
-        },
-        {
-          "action": "assert_text",
-          "selector": "textContains:Thank you",
-          "expected": "Thank you"
-        }
-      ]
-    }
-  ]
-}
-
+{"name":"Merged Test Suite","tests":[]}
 ''';
