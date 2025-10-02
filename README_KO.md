@@ -4,6 +4,8 @@
 
 Chrome WebDriver를 사용한 Flutter 웹 애플리케이션 integration test 프레임워크
 
+[샘플 테스트를 구동하는 스크린캐스트](https://youtu.be/5ak3G1bGFAw)
+
 ## 프로젝트 구조
 
 ```

@@ -4,6 +4,8 @@
 
 Integration test framework for Flutter web applications built on top of Chrome WebDriver.
 
+[Screencast running sample test](https://youtu.be/5ak3G1bGFAw)
+
 ## Project Structure
 
 ```
