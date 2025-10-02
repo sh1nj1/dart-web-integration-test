@@ -38,12 +38,16 @@ dart-web-integration-test/
 dart pub get
 ```
 
-### 2. ChromeDriver 설치 (자동)
+### 2. ChromeDriver 설치
 ChromeDriver가 설치되어 있지 않으면 테스트 실행 시 자동으로 설치 여부를 물어봅니다.
 
-**수동 설치:**
+원하는 경우 미리 수동으로 설치할 수 있습니다:
+
 ```bash
+# 자동 설치 (Chrome 버전에 맞게 설치)
 dart run bin/install_chromedriver.dart
+
+# 또는 수동으로 ChromeDriver를 다운로드하여 drivers/chromedriver에 배치
 ```
 
 ### 3. Flutter 웹 앱 실행
