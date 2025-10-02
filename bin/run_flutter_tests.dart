@@ -203,6 +203,7 @@ void main(List<String> args) async {
         '--target=integration_test/dsl_runner.dart',
         '-d',
         'chrome',
+        ...flutterArgs
       ];
       
       // Specify Chrome binary if provided (for CI)
@@ -226,6 +227,7 @@ void main(List<String> args) async {
         workingDirectory: targetAppDir,
         runInShell: true,
       );
+      log('Run flutter ${args.join(' ')}');
 
       // Monitor output and kill process when tests complete
       final completer = Completer<int>();
