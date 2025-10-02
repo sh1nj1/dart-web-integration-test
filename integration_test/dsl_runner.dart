@@ -216,29 +216,47 @@ Future<void> _assertVisible(WidgetTester tester, Map<String, dynamic> step) asyn
 /// - key:my-key - find by key
 /// - type:ElevatedButton - find by widget type
 Finder _parseFinder(WidgetTester tester, String selector) {
-  if (selector.contains(':')) {
-    final parts = selector.split(':');
+  // Extract index if present (e.g., "Button[0]" -> index: 0, selector: "Button")
+  int? index;
+  String cleanSelector = selector;
+  
+  final indexMatch = RegExp(r'\[(\d+)\]$').firstMatch(selector);
+  if (indexMatch != null) {
+    index = int.parse(indexMatch.group(1)!);
+    cleanSelector = selector.substring(0, indexMatch.start);
+  }
+  
+  Finder finder;
+  
+  if (cleanSelector.contains(':')) {
+    final parts = cleanSelector.split(':');
     final selectorType = parts[0];
     final selectorValue = parts.sublist(1).join(':'); // Handle colons in value
     
     switch (selectorType) {
       case 'contains':
-        return find.textContaining(selectorValue);
+        finder = find.textContaining(selectorValue);
+        break;
       case 'label':
         finder = find.bySemanticsLabel(selectorValue);
         break;
       case 'key':
-        return find.byKey(Key(selectorValue));
+        finder = find.byKey(Key(selectorValue));
+        break;
       case 'type':
-        return _findByTypeName(selectorValue);
+        finder = _findByTypeName(selectorValue);
+        break;
       default:
         print('  Warning: Unknown selector type "$selectorType"');
-        return find.text(selector); // Fallback to text search
+        finder = find.text(cleanSelector); // Fallback to text search
     }
+  } else {
+    // No colon found - treat as plain text selector
+    finder = find.text(cleanSelector);
   }
   
-  // No colon found - treat as plain text selector
-  return find.text(selector);
+  // Apply index if specified
+  return index != null ? finder.at(index) : finder;
 }
 
 Finder _findByTypeName(String typeName) {
