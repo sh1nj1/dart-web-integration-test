@@ -71,12 +71,12 @@ dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"
 dart run bin/run_flutter_tests.dart "test_dsl/**/*.yaml"
 
 # 다른 Flutter 앱 테스트 (자동 app_config.dart 생성)
-dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../myapp/lib/main.dart
-dart run bin/run_flutter_tests.dart test_dsl/* --target-app /path/to/app/lib/main.dart
+dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../myapp
+dart run bin/run_flutter_tests.dart test_dsl/* --target-app /path/to/app
 
 # 추가 Flutter 인자 전달 (--dart-define 등)
 dart run bin/run_flutter_tests.dart test_dsl/* --dart-define flavor=local
-dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../app/lib/main.dart --dart-define ENV=prod
+dart run bin/run_flutter_tests.dart test_dsl/* --target-app ../myapp --dart-define ENV=prod
 
 # 또는 앱 디렉토리 직접 지정 (수동 app_config.dart 필요)
 dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/app
