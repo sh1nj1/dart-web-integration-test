@@ -5,14 +5,17 @@ import 'package:glob/glob.dart';
 import 'package:yaml/yaml.dart';
 import '../lib/chrome_driver_manager.dart';
 
+// Custom print function with [DSL] prefix
+void log(Object? message) => log('[DSL] $message');
+
 void main(List<String> args) async {
   if (args.isEmpty) {
-    print('Usage: dart run bin/run_flutter_tests.dart <test_dsl_file|glob_pattern> [target-app-dir]');
-    print('Examples:');
-    print('  dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml');
-    print('  dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"');
-    print('  dart run bin/run_flutter_tests.dart "test_dsl/**/*.yaml"');
-    print('\nNote: Quote the pattern to prevent shell expansion!');
+    log('Usage: dart run bin/run_flutter_tests.dart <test_dsl_file|glob_pattern> [target-app-dir]');
+    log('Examples:');
+    log('  dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml');
+    log('  dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"');
+    log('  dart run bin/run_flutter_tests.dart "test_dsl/**/*.yaml"');
+    log('\nNote: Quote the pattern to prevent shell expansion!');
     exit(1);
   }
 
@@ -46,24 +49,24 @@ void main(List<String> args) async {
   uniqueFiles.sort();
   
   if (uniqueFiles.isEmpty) {
-    print('❌ No test files found');
+    log('❌ No test files found');
     exit(1);
   }
 
-  print('Found ${uniqueFiles.length} test file(s):');
+  log('Found ${uniqueFiles.length} test file(s):');
   for (final file in uniqueFiles) {
-    print('  - $file');
+    log('  - $file');
   }
-  print('');
+  log('');
 
   // Check if ChromeDriver is installed
   if (!await _isChromeDriverInstalled()) {
-    print('\n❌ ChromeDriver not found!');
-    print('Would you like to install it now? (y/n)');
+    log('\n❌ ChromeDriver not found!');
+    log('Would you like to install it now? (y/n)');
     
     final response = stdin.readLineSync();
     if (response?.toLowerCase() == 'y' || response?.toLowerCase() == 'yes') {
-      print('\nInstalling ChromeDriver...\n');
+      log('\nInstalling ChromeDriver...\n');
       final installResult = await Process.run(
         'dart',
         ['run', 'bin/install_chromedriver.dart'],
@@ -74,14 +77,14 @@ void main(List<String> args) async {
       stderr.write(installResult.stderr);
       
       if (installResult.exitCode != 0) {
-        print('\n❌ ChromeDriver installation failed!');
+        log('\n❌ ChromeDriver installation failed!');
         exit(1);
       }
       
-      print('\n✓ ChromeDriver installed successfully!\n');
+      log('\n✓ ChromeDriver installed successfully!\n');
     } else {
-      print('\nPlease install ChromeDriver by running:');
-      print('  dart run bin/install_chromedriver.dart\n');
+      log('\nPlease install ChromeDriver by running:');
+      log('  dart run bin/install_chromedriver.dart\n');
       exit(1);
     }
   }
@@ -95,10 +98,10 @@ void main(List<String> args) async {
     final testDslFile = uniqueFiles[fileIndex];
     final absolutePath = File(testDslFile).absolute.path;
 
-    print('\n${'=' * 60}');
-    print('Running test file ${fileIndex + 1}/${uniqueFiles.length}: $testDslFile');
-    print('=' * 60);
-    print('Target app directory: $targetAppDir\n');
+    log('\n${'=' * 60}');
+    log('Running test file ${fileIndex + 1}/${uniqueFiles.length}: $testDslFile');
+    log('=' * 60);
+    log('Target app directory: $targetAppDir\n');
 
     // Initialize ChromeDriver manager
     final chromeDriverManager = ChromeDriverManager();
@@ -110,25 +113,25 @@ void main(List<String> args) async {
       
       if (!isRunning) {
         // Start ChromeDriver only if not already running
-        print('Starting ChromeDriver...');
+        log('Starting ChromeDriver...');
         await chromeDriverManager.startDriver();
         chromeDriverStartedByUs = true;
         
         // Wait and verify ChromeDriver is ready
-        print('Waiting for ChromeDriver to be ready...');
+        log('Waiting for ChromeDriver to be ready...');
         for (int i = 0; i < 10; i++) {
           await Future.delayed(Duration(milliseconds: 500));
           if (await _isChromeDriverRunning()) {
-            print('ChromeDriver is ready!');
+            log('ChromeDriver is ready!');
             break;
           }
         }
       } else {
-        print('ChromeDriver already running, using existing instance...');
+        log('ChromeDriver already running, using existing instance...');
       }
       
       // Create symlinks instead of copying files (keeps target app clean)
-      print('Creating test infrastructure symlinks...');
+      log('Creating test infrastructure symlinks...');
       final currentDir = Directory.current.absolute.path;
       
       // Backup existing directories if they exist
@@ -141,16 +144,16 @@ void main(List<String> args) async {
       // Check if app_config.dart exists, if not create from template
       final appConfigFile = File('$targetAppDir/integration_test/app_config.dart');
       if (!await appConfigFile.exists()) {
-        print('Note: app_config.dart not found. Using default template.');
-        print('You may need to create app_config.dart for app-specific initialization.');
+        log('Note: app_config.dart not found. Using default template.');
+        log('You may need to create app_config.dart for app-specific initialization.');
       }
       
       // Generate test DSL as Dart code (for web compatibility)
-      print('Generating test DSL code...');
+      log('Generating test DSL code...');
       await _generateTestDslCode(testDslFile, '$targetAppDir/integration_test/test_dsl_data.dart');
 
     // Run Flutter driver test for web
-    print('Starting Flutter driver...');
+    log('Starting Flutter driver...');
     
     // Prepare Chrome arguments for CI environment
     final chromeArgs = Platform.environment['CHROME_ARGS'] ?? '';
@@ -168,7 +171,7 @@ void main(List<String> args) async {
     // Specify Chrome binary if provided (for CI)
     if (chromeExecutable != null && chromeExecutable.isNotEmpty) {
       args.add('--chrome-binary=$chromeExecutable');
-      print('Using Chrome binary: $chromeExecutable');
+      log('Using Chrome binary: $chromeExecutable');
     }
     
     // Add Chrome arguments as web browser flags if provided
@@ -228,7 +231,7 @@ void main(List<String> args) async {
       await _killChromeProcesses();
       
       // Clean up symlinks and restore backups
-      print('\nCleaning up test infrastructure...');
+      log('\nCleaning up test infrastructure...');
       await _deleteSymlink('$targetAppDir/test_driver');
       await _deleteSymlink('$targetAppDir/integration_test');
       
@@ -238,11 +241,11 @@ void main(List<String> args) async {
       
       // Stop ChromeDriver only if we started it
       if (chromeDriverStartedByUs) {
-        print('Stopping ChromeDriver...');
+        log('Stopping ChromeDriver...');
         await chromeDriverManager.stopDriver();
       }
     } catch (e) {
-      print('Error: $e');
+      log('Error: $e');
       totalFailed++;
       failedFiles.add(testDslFile);
       
@@ -261,20 +264,20 @@ void main(List<String> args) async {
   }
 
   // Print overall summary
-  print('\n${'=' * 60}');
-  print('OVERALL TEST SUMMARY');
-  print('=' * 60);
-  print('Total test files: ${uniqueFiles.length}');
-  print('Passed: $totalPassed');
-  print('Failed: $totalFailed');
+  log('\n${'=' * 60}');
+  log('OVERALL TEST SUMMARY');
+  log('=' * 60);
+  log('Total test files: ${uniqueFiles.length}');
+  log('Passed: $totalPassed');
+  log('Failed: $totalFailed');
   
   if (failedFiles.isNotEmpty) {
-    print('\nFailed test files:');
+    log('\nFailed test files:');
     for (final file in failedFiles) {
-      print('  ✗ $file');
+      log('  ✗ $file');
     }
   }
-  print('=' * 60);
+  log('=' * 60);
   
   // Exit with appropriate code
   exit(totalFailed > 0 ? 1 : 0);
@@ -443,7 +446,7 @@ Future<void> _backupExistingDirectory(String path) async {
   // Check if it's a real directory (not a symlink)
   if (await dir.exists() && !await link.exists()) {
     final backupPath = '$path.bak';
-    print('  Backing up existing directory: $path -> $backupPath');
+    log('  Backing up existing directory: $path -> $backupPath');
     await dir.rename(backupPath);
   }
 }
@@ -453,7 +456,7 @@ Future<void> _restoreBackup(String path) async {
   final backupDir = Directory(backupPath);
   
   if (await backupDir.exists()) {
-    print('  Restoring backup: $backupPath -> $path');
+    log('  Restoring backup: $backupPath -> $path');
     await backupDir.rename(path);
   }
 }
