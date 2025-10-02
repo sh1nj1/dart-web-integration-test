@@ -64,11 +64,16 @@ flutter run -d chrome --web-port 3001
 ### 테스트 실행
 
 ```bash
-# Flutter Integration Test 실행 (YAML 권장, JSON도 지원)
+# 단일 테스트 파일 실행 (YAML 권장, JSON도 지원)
 dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml
+
+# 여러 테스트 파일 실행 (glob 패턴 사용)
+dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"
+dart run bin/run_flutter_tests.dart "test_dsl/**/*.yaml"
 
 # 다른 Flutter 앱 테스트
 dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml /path/to/flutter/app
+dart run bin/run_flutter_tests.dart "test_dsl/*.yaml" /path/to/flutter/app
 ```
 
 **참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리에 대한 심볼릭 링크가 생성되고, 테스트 완료 후 자동으로 삭제됩니다.

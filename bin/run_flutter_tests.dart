@@ -1,21 +1,36 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:glob/glob.dart';
 import 'package:yaml/yaml.dart';
 import '../lib/chrome_driver_manager.dart';
 
 void main(List<String> args) async {
   if (args.isEmpty) {
-    print('Usage: dart run bin/run_flutter_tests.dart <test_dsl_file> [target-app-dir]');
+    print('Usage: dart run bin/run_flutter_tests.dart <test_dsl_file|glob_pattern> [target-app-dir]');
+    print('Examples:');
+    print('  dart run bin/run_flutter_tests.dart test_dsl/sample_test.yaml');
+    print('  dart run bin/run_flutter_tests.dart "test_dsl/*.yaml"');
+    print('  dart run bin/run_flutter_tests.dart "test_dsl/**/*.yaml"');
     exit(1);
   }
 
-  final testDslFile = args[0];
+  final testDslPattern = args[0];
   final targetAppDir = args.length > 1 ? args[1] : './test_target';
-  final absolutePath = File(testDslFile).absolute.path;
 
-  print('Running Flutter integration tests with DSL: $testDslFile');
-  print('Target app directory: $targetAppDir');
+  // Resolve test files from pattern or single file
+  final testFiles = await _resolveTestFiles(testDslPattern);
+  
+  if (testFiles.isEmpty) {
+    print('❌ No test files found matching: $testDslPattern');
+    exit(1);
+  }
+
+  print('Found ${testFiles.length} test file(s):');
+  for (final file in testFiles) {
+    print('  - $file');
+  }
+  print('');
 
   // Check if ChromeDriver is installed
   if (!await _isChromeDriverInstalled()) {
@@ -47,54 +62,68 @@ void main(List<String> args) async {
     }
   }
 
-  // Initialize ChromeDriver manager
-  final chromeDriverManager = ChromeDriverManager();
-  bool chromeDriverStartedByUs = false;
+  // Run tests for each file
+  int totalPassed = 0;
+  int totalFailed = 0;
+  final failedFiles = <String>[];
 
-  try {
-    // Check if ChromeDriver is already running
-    final isRunning = await _isChromeDriverRunning();
-    
-    if (!isRunning) {
-      // Start ChromeDriver only if not already running
-      print('Starting ChromeDriver...');
-      await chromeDriverManager.startDriver();
-      chromeDriverStartedByUs = true;
+  for (int fileIndex = 0; fileIndex < testFiles.length; fileIndex++) {
+    final testDslFile = testFiles[fileIndex];
+    final absolutePath = File(testDslFile).absolute.path;
+
+    print('\n${'=' * 60}');
+    print('Running test file ${fileIndex + 1}/${testFiles.length}: $testDslFile');
+    print('=' * 60);
+    print('Target app directory: $targetAppDir\n');
+
+    // Initialize ChromeDriver manager
+    final chromeDriverManager = ChromeDriverManager();
+    bool chromeDriverStartedByUs = false;
+
+    try {
+      // Check if ChromeDriver is already running
+      final isRunning = await _isChromeDriverRunning();
       
-      // Wait and verify ChromeDriver is ready
-      print('Waiting for ChromeDriver to be ready...');
-      for (int i = 0; i < 10; i++) {
-        await Future.delayed(Duration(milliseconds: 500));
-        if (await _isChromeDriverRunning()) {
-          print('ChromeDriver is ready!');
-          break;
+      if (!isRunning) {
+        // Start ChromeDriver only if not already running
+        print('Starting ChromeDriver...');
+        await chromeDriverManager.startDriver();
+        chromeDriverStartedByUs = true;
+        
+        // Wait and verify ChromeDriver is ready
+        print('Waiting for ChromeDriver to be ready...');
+        for (int i = 0; i < 10; i++) {
+          await Future.delayed(Duration(milliseconds: 500));
+          if (await _isChromeDriverRunning()) {
+            print('ChromeDriver is ready!');
+            break;
+          }
         }
+      } else {
+        print('ChromeDriver already running, using existing instance...');
       }
-    } else {
-      print('ChromeDriver already running, using existing instance...');
-    }
-    
-    // Create symlinks instead of copying files (keeps target app clean)
-    print('Creating test infrastructure symlinks...');
-    final currentDir = Directory.current.absolute.path;
-    
-    // Backup existing directories if they exist
-    await _backupExistingDirectory('$targetAppDir/test_driver');
-    await _backupExistingDirectory('$targetAppDir/integration_test');
-    
-    await _createSymlink('$currentDir/test_driver', '$targetAppDir/test_driver');
-    await _createSymlink('$currentDir/integration_test', '$targetAppDir/integration_test');
-    
-    // Check if app_config.dart exists, if not create from template
-    final appConfigFile = File('$targetAppDir/integration_test/app_config.dart');
-    if (!await appConfigFile.exists()) {
-      print('Note: app_config.dart not found. Using default template.');
-      print('You may need to create app_config.dart for app-specific initialization.');
-    }
-    
-    // Generate test DSL as Dart code (for web compatibility)
-    print('Generating test DSL code...');
-    await _generateTestDslCode(testDslFile, '$targetAppDir/integration_test/test_dsl_data.dart');
+      
+      // Create symlinks instead of copying files (keeps target app clean)
+      print('Creating test infrastructure symlinks...');
+      final currentDir = Directory.current.absolute.path;
+      
+      // Backup existing directories if they exist
+      await _backupExistingDirectory('$targetAppDir/test_driver');
+      await _backupExistingDirectory('$targetAppDir/integration_test');
+      
+      await _createSymlink('$currentDir/test_driver', '$targetAppDir/test_driver');
+      await _createSymlink('$currentDir/integration_test', '$targetAppDir/integration_test');
+      
+      // Check if app_config.dart exists, if not create from template
+      final appConfigFile = File('$targetAppDir/integration_test/app_config.dart');
+      if (!await appConfigFile.exists()) {
+        print('Note: app_config.dart not found. Using default template.');
+        print('You may need to create app_config.dart for app-specific initialization.');
+      }
+      
+      // Generate test DSL as Dart code (for web compatibility)
+      print('Generating test DSL code...');
+      await _generateTestDslCode(testDslFile, '$targetAppDir/integration_test/test_dsl_data.dart');
 
     // Run Flutter driver test for web
     print('Starting Flutter driver...');
@@ -157,48 +186,92 @@ void main(List<String> args) async {
     
     process.stderr.transform(SystemEncoding().decoder).listen(stderr.write);
 
-    // Wait for either manual completion or process exit
-    final exitCode = await Future.any([
-      completer.future,
-      process.exitCode,
-    ]);
-    
-    // Kill any remaining Chrome processes
-    await _killChromeProcesses();
-    
-    // Clean up symlinks and restore backups
-    print('\nCleaning up test infrastructure...');
-    await _deleteSymlink('$targetAppDir/test_driver');
-    await _deleteSymlink('$targetAppDir/integration_test');
-    
-    // Restore backed up directories
-    await _restoreBackup('$targetAppDir/test_driver');
-    await _restoreBackup('$targetAppDir/integration_test');
-    
-    // Stop ChromeDriver only if we started it
-    if (chromeDriverStartedByUs) {
-      print('Stopping ChromeDriver...');
-      await chromeDriverManager.stopDriver();
+      // Wait for either manual completion or process exit
+      final exitCode = await Future.any([
+        completer.future,
+        process.exitCode,
+      ]);
+      
+      // Track results
+      if (exitCode == 0) {
+        totalPassed++;
+      } else {
+        totalFailed++;
+        failedFiles.add(testDslFile);
+      }
+      
+      // Kill any remaining Chrome processes
+      await _killChromeProcesses();
+      
+      // Clean up symlinks and restore backups
+      print('\nCleaning up test infrastructure...');
+      await _deleteSymlink('$targetAppDir/test_driver');
+      await _deleteSymlink('$targetAppDir/integration_test');
+      
+      // Restore backed up directories
+      await _restoreBackup('$targetAppDir/test_driver');
+      await _restoreBackup('$targetAppDir/integration_test');
+      
+      // Stop ChromeDriver only if we started it
+      if (chromeDriverStartedByUs) {
+        print('Stopping ChromeDriver...');
+        await chromeDriverManager.stopDriver();
+      }
+    } catch (e) {
+      print('Error: $e');
+      totalFailed++;
+      failedFiles.add(testDslFile);
+      
+      // Clean up on error
+      await _deleteSymlink('$targetAppDir/test_driver');
+      await _deleteSymlink('$targetAppDir/integration_test');
+      
+      // Restore backups
+      await _restoreBackup('$targetAppDir/test_driver');
+      await _restoreBackup('$targetAppDir/integration_test');
+      
+      if (chromeDriverStartedByUs) {
+        await chromeDriverManager.stopDriver();
+      }
     }
-    
-    print('Done!');
-    
-    // Force exit
-    exit(exitCode);
-  } catch (e) {
-    print('Error: $e');
-    // Clean up on error
-    await _deleteSymlink('$targetAppDir/test_driver');
-    await _deleteSymlink('$targetAppDir/integration_test');
-    
-    // Restore backups
-    await _restoreBackup('$targetAppDir/test_driver');
-    await _restoreBackup('$targetAppDir/integration_test');
-    
-    if (chromeDriverStartedByUs) {
-      await chromeDriverManager.stopDriver();
+  }
+
+  // Print overall summary
+  print('\n${'=' * 60}');
+  print('OVERALL TEST SUMMARY');
+  print('=' * 60);
+  print('Total test files: ${testFiles.length}');
+  print('Passed: $totalPassed');
+  print('Failed: $totalFailed');
+  
+  if (failedFiles.isNotEmpty) {
+    print('\nFailed test files:');
+    for (final file in failedFiles) {
+      print('  ✗ $file');
     }
-    exit(1);
+  }
+  print('=' * 60);
+  
+  // Exit with appropriate code
+  exit(totalFailed > 0 ? 1 : 0);
+}
+
+Future<List<String>> _resolveTestFiles(String pattern) async {
+  // Check if pattern contains glob characters
+  if (pattern.contains('*') || pattern.contains('?') || pattern.contains('[')) {
+    // Use glob to find matching files
+    final glob = Glob(pattern);
+    final files = await glob.list().where((entity) => entity is File).map((entity) => entity.path).toList();
+    files.sort(); // Sort for consistent ordering
+    return files;
+  } else {
+    // Single file
+    final file = File(pattern);
+    if (await file.exists()) {
+      return [pattern];
+    } else {
+      return [];
+    }
   }
 }
 
