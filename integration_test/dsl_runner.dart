@@ -84,9 +84,9 @@ void main() {
       }
       
       // Print test summary
-      log('\n' + ' + '=' * 60);
+      log('\n' + '=' * 60);
       log('TEST SUMMARY');
-      log('' + '=' * 60);
+      log('=' * 60);
       log('Total: ${passed + failed}');
       log('Passed: $passed');
       log('Failed: $failed');
@@ -97,7 +97,7 @@ void main() {
           log('  - $test');
         }
       }
-      log('' + '=' * 60);
+      log('=' * 60);
       
       // Fail the test if any test case failed
       if (failed > 0) {
