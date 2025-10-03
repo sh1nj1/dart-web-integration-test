@@ -20,9 +20,6 @@ jobs:
     
     - name: Get dependencies
       run: flutter pub get
-
-    - name: Run flutter test
-      run: flutter test
     
     - name: Get test_target dependencies
       run: |
@@ -99,6 +96,14 @@ jobs:
         
         # Stop Xvfb
         kill $XVFB_PID || true
+        
+        # run flutter test if test_exit_code is 0
+        # the flutter test should be after dsl test because of the generated files.
+        if [ $TEST_EXIT_CODE -ne 0 ]; then
+          exit $TEST_EXIT_CODE
+        fi
+        flutter test
+        TEST_EXIT_CODE=$?
         
         exit $TEST_EXIT_CODE
     
