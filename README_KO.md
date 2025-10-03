@@ -9,7 +9,7 @@ Chrome WebDriver를 사용한 Flutter 웹 애플리케이션 integration test �
 ## 프로젝트 구조
 
 ```
-dart-web-integration-test/
+flutter-web-integration-test/
 ├── lib/                          # 핵심 라이브러리
 │   ├── chrome_driver_manager.dart # ChromeDriver 관리
 │   └── test_dsl_parser.dart       # JSON/YAML 테스트 DSL 파서

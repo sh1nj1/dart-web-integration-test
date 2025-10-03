@@ -1,4 +1,4 @@
-name: dart_web_integration_test
+name: flutter_web_integration_test
 description: Chrome WebDriver integration test framework for Dart web applications
 version: 1.0.0
 
@@ -17,4 +17,4 @@ dev_dependencies:
   lints: ^2.1.1
 
 executables:
-  dart_web_integration_test:
+  flutter_web_integration_test:

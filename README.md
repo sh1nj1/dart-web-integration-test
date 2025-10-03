@@ -9,7 +9,7 @@ Integration test framework for Flutter web applications built on top of Chrome W
 ## Project Structure
 
 ```
-dart-web-integration-test/
+flutter-web-integration-test/
 ├── lib/                          # Core library code
 │   ├── chrome_driver_manager.dart # ChromeDriver management
 │   └── test_dsl_parser.dart       # JSON/YAML test DSL parser
