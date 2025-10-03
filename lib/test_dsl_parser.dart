@@ -84,7 +84,7 @@ class TestSuite {
     if (yaml is YamlMap) {
       return Map<String, dynamic>.from(yaml.map((key, value) => MapEntry(key.toString(), _convertYamlToMap(value))));
     } else if (yaml is YamlList) {
-      return yaml.map((item) => _convertYamlToMap(item)).toList();
+      throw UnsupportedError('Yaml lists are not supported');
     } else {
       return yaml;
     }
