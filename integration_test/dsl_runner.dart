@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -289,13 +290,34 @@ Finder _findByTypeName(String typeName) {
 String _extractText(Element element) {
   final widget = element.widget;
   if (widget is Text) {
-    return widget.data ?? '';
+    if (widget.data != null) {
+      return widget.data!;
+    }
+    final textSpan = widget.textSpan;
+    if (textSpan != null) {
+      return textSpan.toPlainText();
+    }
+    return '';
   } else if (widget is RichText) {
     return widget.text.toPlainText();
   }
   // Try to find text in children
-  return '';
+  String nestedText = '';
+  element.visitChildren((child) {
+    if (nestedText.isEmpty) {
+      nestedText = _extractText(child);
+    }
+  });
+  return nestedText;
 }
+
+
+@visibleForTesting
+Finder debugParseFinder(WidgetTester tester, String selector) =>
+    _parseFinder(tester, selector);
+
+@visibleForTesting
+String debugExtractText(Element element) => _extractText(element);
 
 
 /// Capture screenshot on test failure
