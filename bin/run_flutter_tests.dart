@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import '../integration_test/dsl_log_protocol.dart';
 import 'package:glob/glob.dart';
 import 'package:yaml/yaml.dart';
 import '../lib/chrome_driver_manager.dart';
@@ -141,6 +142,7 @@ void main(List<String> args) async {
   const exceptionIndicator = 'EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK';
   String stdoutExceptionBuffer = '';
   String stderrExceptionBuffer = '';
+  String stdoutLineBuffer = '';
 
   try {
     // Check if ChromeDriver is already running
@@ -284,6 +286,76 @@ void main(List<String> args) async {
         });
       }
 
+      void handleDslLogMessage(DslLogMessage message) {
+        switch (message.type) {
+          case DslLogEventType.sourceFile:
+            final prevFile = currentSourceFile;
+            if (prevFile != null && currentFileHadFailure) {
+              filesWithFailures.add(prevFile);
+            }
+            final path = message.payload['path'];
+            if (path is String && path.isNotEmpty) {
+              currentSourceFile = path;
+            } else {
+              currentSourceFile = null;
+            }
+            currentFileHadFailure = false;
+            break;
+          case DslLogEventType.testCaseStart:
+            final description = message.payload['description'];
+            if (description is String && description.isNotEmpty) {
+              currentTestCase = description;
+            }
+            final source = message.payload['sourceFile'];
+            if (source is String && source.isNotEmpty) {
+              currentSourceFile = source;
+            }
+            break;
+          case DslLogEventType.testCaseResult:
+            final status = message.payload['status'];
+            final source = message.payload['sourceFile'];
+            final fileForFailure = (source is String && source.isNotEmpty)
+                ? source
+                : currentSourceFile;
+            if (status == 'failed') {
+              currentFileHadFailure = true;
+              if (fileForFailure != null) {
+                filesWithFailures.add(fileForFailure);
+              }
+            }
+            break;
+          case DslLogEventType.summary:
+            final passed = message.payload['passed'];
+            final failed = message.payload['failed'];
+            if (passed is num) {
+              dslReportedPassedCases = passed.toInt();
+            }
+            if (failed is num) {
+              dslReportedFailedCases = failed.toInt();
+            }
+            break;
+        }
+      }
+
+      void processStdoutChunk(String data) {
+        stdoutLineBuffer += data;
+        while (true) {
+          final newlineIndex = stdoutLineBuffer.indexOf('\n');
+          if (newlineIndex == -1) {
+            break;
+          }
+          var line = stdoutLineBuffer.substring(0, newlineIndex);
+          stdoutLineBuffer = stdoutLineBuffer.substring(newlineIndex + 1);
+          if (line.endsWith('\r')) {
+            line = line.substring(0, line.length - 1);
+          }
+          final message = DslLogProtocol.decode(line);
+          if (message != null) {
+            handleDslLogMessage(message);
+          }
+        }
+      }
+
       process.stdout.transform(SystemEncoding().decoder).listen((data) {
         stdout.write(data);
         stdoutExceptionBuffer = updateExceptionBuffer(
@@ -291,45 +363,7 @@ void main(List<String> args) async {
           data,
           handleFlutterFrameworkException,
         );
-
-        // Track which source file we're running tests from
-        final sourceMatch =
-            RegExp(r'\[DSL\] Running tests from: (.+)').firstMatch(data);
-        if (sourceMatch != null) {
-          // Save previous file's failure status
-          final prevFile = currentSourceFile;
-          if (prevFile != null && currentFileHadFailure) {
-            filesWithFailures.add(prevFile);
-          }
-          currentSourceFile = sourceMatch.group(1);
-          currentFileHadFailure = false;
-        }
-
-        final testCaseMatch =
-            RegExp(r'\[DSL\] Running test case: (.+)').firstMatch(data);
-        if (testCaseMatch != null) {
-          currentTestCase = testCaseMatch.group(1);
-        }
-
-        // Track if current test case failed
-        if (data.contains('[DSL] ✗ Test case ') && data.contains('failed')) {
-          currentFileHadFailure = true;
-        }
-
-        // Parse test case results from dsl_runner output
-        final passedMatch = RegExp(r'\[DSL\] Passed: (\d+)').firstMatch(data);
-        if (passedMatch != null) {
-          dslReportedPassedCases = int.parse(passedMatch.group(1)!);
-        }
-        final failedMatch = RegExp(r'\[DSL\] Failed: (\d+)').firstMatch(data);
-        if (failedMatch != null) {
-          dslReportedFailedCases = int.parse(failedMatch.group(1)!);
-          // Save last file's failure status
-          final lastFile = currentSourceFile;
-          if (lastFile != null && currentFileHadFailure) {
-            filesWithFailures.add(lastFile);
-          }
-        }
+        processStdoutChunk(data);
 
         if (data.contains('All tests passed!')) {
           // Tests passed, kill the process

@@ -12,12 +12,15 @@ import 'test_dsl_data.dart';
 // If app_config.dart exists, it will be used to start the app
 // Otherwise, the app must be running before tests start
 import 'app_config.dart' as config;
+import 'dsl_log_protocol.dart';
 
 // Custom print function with [DSL] prefix
 void log(Object? message) => print('[DSL] $message');
+void logData(String type, Map<String, dynamic> payload) =>
+    print(DslLogProtocol.encode(type, payload));
 
 /// Generic DSL test runner for Flutter integration tests
-/// 
+///
 /// This runner does not depend on any specific app implementation.
 /// To customize for your app:
 /// 1. Create app_config.dart from app_config.dart.template
@@ -52,17 +55,25 @@ void main() {
           log('\n${'=' * 60}');
           log('Running tests from: $sourceFile');
           log('=' * 60);
+          logData(DslLogEventType.sourceFile, {
+            'path': sourceFile,
+          });
         }
-        
-        log('Running test case: ${testCase['description']}');
-        
+
+        final description = testCase['description'] as String;
+        log('Running test case: $description');
+        logData(DslLogEventType.testCaseStart, {
+          'description': description,
+          if (currentFile != null) 'sourceFile': currentFile,
+        });
+
         try {
           // Execute steps
           final steps = testCase['steps'] as List;
           for (int i = 0; i < steps.length; i++) {
             final step = steps[i];
             log('  Step ${i + 1}/${steps.length}: ${step['action']}');
-            
+
             try {
               await _executeStep(tester, step);
             } catch (e) {
@@ -74,15 +85,26 @@ void main() {
             }
           }
 
-          log('✅ Test case "${testCase['description']}" passed');
+          log('✅ Test case "$description" passed');
+          logData(DslLogEventType.testCaseResult, {
+            'description': description,
+            'status': 'passed',
+            if (currentFile != null) 'sourceFile': currentFile,
+          });
           passed++;
         } catch (e) {
-          log('❌ Test case "${testCase['description']}" failed');
+          log('❌ Test case "$description" failed');
           failed++;
-          failedTests.add(testCase['description']);
+          failedTests.add(description);
+          logData(DslLogEventType.testCaseResult, {
+            'description': description,
+            'status': 'failed',
+            'reason': e.toString(),
+            if (currentFile != null) 'sourceFile': currentFile,
+          });
         }
       }
-      
+
       // Print test summary
       log('=' * 60);
       log('TEST SUMMARY');
@@ -98,7 +120,13 @@ void main() {
         }
       }
       log('=' * 60);
-      
+
+      logData(DslLogEventType.summary, {
+        'passed': passed,
+        'failed': failed,
+        if (failedTests.isNotEmpty) 'failedTests': failedTests,
+      });
+
       // Fail the test if any test case failed
       if (failed > 0) {
         fail('$failed test case(s) failed');
@@ -125,7 +153,8 @@ Future<Finder> _waitForFinder(
   throw Exception('Timed out waiting for ${finder.description}');
 }
 
-Future<void> _executeStep(WidgetTester tester, Map<String, dynamic> step) async {
+Future<void> _executeStep(
+    WidgetTester tester, Map<String, dynamic> step) async {
   final action = step['action'] as String;
 
   switch (action.toLowerCase()) {
@@ -156,13 +185,13 @@ Future<void> _executeStep(WidgetTester tester, Map<String, dynamic> step) async 
       await _assertVisible(tester, step);
       break;
 
-
     default:
       print('  Warning: Unknown action "$action"');
   }
 }
 
-Future<void> _clickElement(WidgetTester tester, Map<String, dynamic> step) async {
+Future<void> _clickElement(
+    WidgetTester tester, Map<String, dynamic> step) async {
   final selector = step['selector'] as String?;
   if (selector == null) return;
 
@@ -175,7 +204,7 @@ Future<void> _typeText(WidgetTester tester, Map<String, dynamic> step) async {
   final value = step['value'] as String;
   final selector = step['selector'] as String?;
 
-  final finder = selector != null 
+  final finder = selector != null
       ? _parseFinder(tester, selector)
       : find.byType(TextFormField);
 
@@ -187,12 +216,11 @@ Future<void> _assertText(WidgetTester tester, Map<String, dynamic> step) async {
   final expected = step['expected'] as String;
   final selector = step['selector'] as String?;
 
-  final finder = selector != null 
-      ? _parseFinder(tester, selector)
-      : find.text(expected);
+  final finder =
+      selector != null ? _parseFinder(tester, selector) : find.text(expected);
 
   await _waitForFinder(tester, finder);
-  
+
   // Verify text content if a specific element was selected
   if (selector != null) {
     final element = finder.evaluate().first;
@@ -201,16 +229,17 @@ Future<void> _assertText(WidgetTester tester, Map<String, dynamic> step) async {
   }
 }
 
-Future<void> _assertVisible(WidgetTester tester, Map<String, dynamic> step) async {
+Future<void> _assertVisible(
+    WidgetTester tester, Map<String, dynamic> step) async {
   final selector = step['selector'] as String?;
   if (selector == null) return;
-  
+
   final finder = _parseFinder(tester, selector);
   await _waitForFinder(tester, finder);
 }
 
 /// Parse a selector string and return a Finder
-/// 
+///
 /// Supported selector formats:
 /// - Button Text - find by exact text (no prefix needed)
 /// - contains:partial - find by partial text
@@ -220,20 +249,20 @@ Finder _parseFinder(WidgetTester tester, String selector) {
   // Extract index if present (e.g., "Button[0]" -> index: 0, selector: "Button")
   int? index;
   String cleanSelector = selector;
-  
+
   final indexMatch = RegExp(r'\[(\d+)\]$').firstMatch(selector);
   if (indexMatch != null) {
     index = int.parse(indexMatch.group(1)!);
     cleanSelector = selector.substring(0, indexMatch.start);
   }
-  
+
   Finder finder;
-  
+
   if (cleanSelector.contains(':')) {
     final parts = cleanSelector.split(':');
     final selectorType = parts[0];
     final selectorValue = parts.sublist(1).join(':'); // Handle colons in value
-    
+
     switch (selectorType) {
       case 'contains':
         finder = find.textContaining(selectorValue);
@@ -255,7 +284,7 @@ Finder _parseFinder(WidgetTester tester, String selector) {
     // No colon found - treat as plain text selector
     finder = find.text(cleanSelector);
   }
-  
+
   // Apply index if specified
   return index != null ? finder.at(index) : finder;
 }
@@ -311,14 +340,12 @@ String _extractText(Element element) {
   return nestedText;
 }
 
-
 @visibleForTesting
 Finder debugParseFinder(WidgetTester tester, String selector) =>
     _parseFinder(tester, selector);
 
 @visibleForTesting
 String debugExtractText(Element element) => _extractText(element);
-
 
 /// Capture screenshot on test failure
 Future<void> _captureScreenshot(
@@ -330,20 +357,18 @@ Future<void> _captureScreenshot(
   try {
     // Generate filename with timestamp
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final sanitizedTestName = testCaseName
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '_');
-    final sanitizedStepName = stepName
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    final sanitizedTestName =
+        testCaseName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    final sanitizedStepName =
+        stepName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
     final filename = '${timestamp}_${sanitizedTestName}_$sanitizedStepName';
 
     print('  Screenshot filename: $filename');
-    
+
     // Take screenshot using integration test binding
     // On web, screenshots are handled by the WebDriver via driver callback
     final result = await binding.takeScreenshot(filename);
-    
+
     print('📸 Screenshot captured: $filename (result: $result)');
   } catch (e, stackTrace) {
     print('  Warning: Failed to capture screenshot: $e');
