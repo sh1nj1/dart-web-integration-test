@@ -1,0 +1,18 @@
+# Exclude generated artifacts
+build/
+chrome/
+chromedriver/
+flutter_driver.log
+screenshots/
+test_target/build/
+test_target/.dart_tool/
+pubspec.lock
+test_target/pubspec.lock
+# Flutter tool caches created on host
+.dart_tool/
+.packages
+.pub-cache/
+
+# Misc
+.git
+.gitignore
