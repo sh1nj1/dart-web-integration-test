@@ -127,6 +127,7 @@ testCases:
         value: Input value (for type actions)
         expected: Expected value (for assert actions)
         waitTime: Wait time in milliseconds
+        alias: account-input  # optional alias to reuse the resolved finder later
 ```
 
 #### Using YAML anchors (reusable steps)
@@ -176,6 +177,20 @@ Selectors can be written as:
 - `label:Submit[0]` - Select the first match for a semantics label
 - `type:ElevatedButton` - Match by widget type
 - `type:TextField[2]` - Select the third match for a widget type
+- `alias:handle` - Reuse a finder previously stored with `alias: handle`
+
+Add `alias:` (at the same level as `selector`) to store the finder from a step for reuse:
+
+```yaml
+- action: type
+  selector: "label:Account"
+  alias: account-input
+  value: first@example.com
+
+- action: type
+  selector: "alias:account-input"
+  value: second@example.com
+```
 
 **Using indexes**: When multiple widgets match, append `[number]` to target a specific instance (0-based).
 

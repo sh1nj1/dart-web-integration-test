@@ -19,6 +19,8 @@ void log(Object? message) => print('[DSL] $message');
 void logData(String type, Map<String, dynamic> payload) =>
     print(DslLogProtocol.encode(type, payload));
 
+final Map<String, Finder> _storedFinders = <String, Finder>{};
+
 /// Generic DSL test runner for Flutter integration tests
 ///
 /// This runner does not depend on any specific app implementation.
@@ -153,6 +155,51 @@ Future<Finder> _waitForFinder(
   throw Exception('Timed out waiting for ${finder.description}');
 }
 
+Future<Finder> _obtainFinder(
+  WidgetTester tester,
+  Map<String, dynamic> step, {
+  Finder? fallback,
+}) async {
+  final selector = step['selector'] as String?;
+  final alias = (step['alias'] as String?)?.trim();
+
+  Finder? finder;
+
+  if (selector != null && selector.isNotEmpty) {
+    finder = _parseFinder(tester, selector);
+  } else if (alias != null && alias.isNotEmpty) {
+    finder = _storedFinders[alias];
+    if (finder == null && fallback != null) {
+      finder = fallback;
+    }
+  } else if (fallback != null) {
+    finder = fallback;
+  }
+
+  if (finder == null) {
+    if (alias != null && alias.isNotEmpty) {
+      throw Exception('Finder alias "$alias" has not been registered yet.');
+    }
+    throw Exception('Step must provide a selector or registered alias.');
+  }
+
+  try {
+    await _waitForFinder(tester, finder);
+  } catch (e) {
+    log("wait for finder failed: ${selector}");
+    rethrow;
+  }
+  final indexMatch = RegExp(r'\[(\d+)\]$').firstMatch(selector!);
+  if (indexMatch != null) {
+    int index = int.parse(indexMatch.group(1)!);
+    finder = finder.at(index);
+  }
+  if (alias != null && alias.isNotEmpty) {
+    _storedFinders[alias] = finder;
+  }
+  return finder;
+}
+
 Future<void> _executeStep(
     WidgetTester tester, Map<String, dynamic> step) async {
   final action = step['action'] as String;
@@ -192,23 +239,18 @@ Future<void> _executeStep(
 
 Future<void> _clickElement(
     WidgetTester tester, Map<String, dynamic> step) async {
-  final selector = step['selector'] as String?;
-  if (selector == null) return;
-
-  final finder = _parseFinder(tester, selector);
-  await _waitForFinder(tester, finder);
-  await tester.tap(finder.first);
+  final finder = await _obtainFinder(tester, step);
+  await tester.tap(finder.first, warnIfMissed: false);
 }
 
 Future<void> _typeText(WidgetTester tester, Map<String, dynamic> step) async {
   final value = step['value'] as String;
   final selector = step['selector'] as String?;
+  final fallback = selector == null || selector.isEmpty
+      ? find.byType(TextFormField)
+      : null;
 
-  final finder = selector != null
-      ? _parseFinder(tester, selector)
-      : find.byType(TextFormField);
-
-  await _waitForFinder(tester, finder);
+  final finder = await _obtainFinder(tester, step, fallback: fallback);
   await tester.enterText(finder.first, value);
 }
 
@@ -216,13 +258,18 @@ Future<void> _assertText(WidgetTester tester, Map<String, dynamic> step) async {
   final expected = step['expected'] as String;
   final selector = step['selector'] as String?;
 
-  final finder =
-      selector != null ? _parseFinder(tester, selector) : find.text(expected);
+  final fallback = selector == null || selector.isEmpty
+      ? find.text(expected)
+      : null;
 
-  await _waitForFinder(tester, finder);
+  final finder = await _obtainFinder(tester, step, fallback: fallback);
 
   // Verify text content if a specific element was selected
-  if (selector != null) {
+  final hasSpecificTarget =
+      (selector != null && selector.isNotEmpty) ||
+          ((step['alias'] as String?)?.isNotEmpty ?? false);
+
+  if (hasSpecificTarget) {
     final element = finder.evaluate().first;
     final text = _extractText(element);
     expect(text, contains(expected));
@@ -231,11 +278,7 @@ Future<void> _assertText(WidgetTester tester, Map<String, dynamic> step) async {
 
 Future<void> _assertVisible(
     WidgetTester tester, Map<String, dynamic> step) async {
-  final selector = step['selector'] as String?;
-  if (selector == null) return;
-
-  final finder = _parseFinder(tester, selector);
-  await _waitForFinder(tester, finder);
+  final finder = await _obtainFinder(tester, step);
 }
 
 /// Parse a selector string and return a Finder
@@ -252,7 +295,6 @@ Finder _parseFinder(WidgetTester tester, String selector) {
 
   final indexMatch = RegExp(r'\[(\d+)\]$').firstMatch(selector);
   if (indexMatch != null) {
-    index = int.parse(indexMatch.group(1)!);
     cleanSelector = selector.substring(0, indexMatch.start);
   }
 
@@ -276,6 +318,13 @@ Finder _parseFinder(WidgetTester tester, String selector) {
       case 'type':
         finder = _findByTypeName(selectorValue);
         break;
+      case 'alias':
+        final cachedFinder = _storedFinders[selectorValue];
+        if (cachedFinder == null) {
+          throw Exception('Finder alias "$selectorValue" has not been registered yet.');
+        }
+        finder = cachedFinder;
+        break;
       default:
         print('  Warning: Unknown selector type "$selectorType"');
         finder = find.text(cleanSelector); // Fallback to text search
@@ -285,8 +334,7 @@ Finder _parseFinder(WidgetTester tester, String selector) {
     finder = find.text(cleanSelector);
   }
 
-  // Apply index if specified
-  return index != null ? finder.at(index) : finder;
+  return finder;
 }
 
 Finder _findByTypeName(String typeName) {
