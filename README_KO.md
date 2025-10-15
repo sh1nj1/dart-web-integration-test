@@ -128,6 +128,7 @@ testCases:
         value: 입력값 (type 액션용)
         expected: 예상값 (assert 액션용)
         waitTime: 대기시간 (밀리초)
+        alias: account-input  # 이후 스텝에서 재사용할 별칭
 ```
 
 #### YAML Anchor 사용 (재사용 가능한 스텝)
@@ -177,6 +178,20 @@ testCases:
 - `label:Submit[0]` - 첫 번째 매칭되는 Semantics 라벨
 - `type:ElevatedButton` - 위젯 타입으로 찾기
 - `type:TextField[2]` - 세 번째 매칭되는 위젯 타입
+- `alias:별칭` - 이전 스텝에서 `alias:`로 저장한 Finder 재사용
+
+동일한 위젯을 여러 번 참조해야 한다면 `alias:`를 사용하세요 (`selector`와 같은 수준에서 정의).
+
+```yaml
+- action: type
+  selector: "label:Account"
+  alias: account-input
+  value: first@example.com
+
+- action: type
+  selector: "alias:account-input"
+  value: second@example.com
+```
 
 **인덱스 사용**: 여러 개의 위젯이 매칭될 때 `[숫자]`를 추가하여 특정 순서의 위젯을 선택할 수 있습니다 (0부터 시작).
 

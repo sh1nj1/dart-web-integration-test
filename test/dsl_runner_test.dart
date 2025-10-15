@@ -52,8 +52,9 @@ void main() {
       );
 
       final finder = dsl.debugParseFinder(tester, 'contains:Item[1]');
-      expect(finder, findsOneWidget);
-      expect(tester.widget<Text>(finder).data, 'Item 1');
+      expect(finder.first, findsOneWidget);
+      expect(tester.widget<Text>(finder.first).data, 'Item 0');
+      expect(tester.widget<Text>(finder.at(1)).data, 'Item 1');
     });
   });
 
