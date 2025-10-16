@@ -34,5 +34,11 @@ integration_test/app_config.dart
 integration_test/test_dsl_data.dart
 .flutter-plugins-dependencies
 
+# local files
 .test.md
-
+ssh-host/
+test_target/.dart-tool/
+test_target/android/
+test_target/ios/
+test_target/linux/
+test_target/macos/
