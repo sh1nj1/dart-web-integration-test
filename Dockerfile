@@ -33,6 +33,7 @@ RUN    apt-get update && \
       libxkbcommon0 \
       libgtk-3-0 \
       libasound2t64 \
+      openssh-client \
       fonts-noto-color-emoji \
       fonts-noto-cjk && \
     rm -rf /var/lib/apt/lists/*

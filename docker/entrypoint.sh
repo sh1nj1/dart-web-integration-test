@@ -54,6 +54,16 @@ cd "$WORKDIR"
 # Ensure mounted directories exist
 mkdir -p test_dsl test_target
 
+# copy ssh files for git dependencies
+if [ -d /ssh-host ]; then
+  rm -rf /root/.ssh
+  mkdir -p /root/.ssh
+  cp -rT /ssh-host /root/.ssh
+  chown -R root:root /root/.ssh
+  chmod 700 /root/.ssh
+  find /root/.ssh -type f -exec chmod 600 {} +
+fi
+
 # create web app
 (cd test_target && flutter config --enable-web)
 (cd test_target && flutter create .)
