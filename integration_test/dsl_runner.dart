@@ -155,6 +155,26 @@ Future<Finder> _waitForFinder(
   throw Exception('Timed out waiting for ${finder.description}');
 }
 
+Duration _parseWaitTimeMs(
+  Map<String, dynamic> step, {
+  int defaultMs = 3000,
+}) {
+  final dynamic waitTime = step['waitTime'];
+
+  if (waitTime is int) {
+    return Duration(milliseconds: waitTime);
+  }
+
+  if (waitTime is String) {
+    final parsed = int.tryParse(waitTime);
+    if (parsed != null) {
+      return Duration(milliseconds: parsed);
+    }
+  }
+
+  return Duration(milliseconds: defaultMs);
+}
+
 Future<Finder> _obtainFinder(
   WidgetTester tester,
   Map<String, dynamic> step, {
@@ -184,7 +204,12 @@ Future<Finder> _obtainFinder(
   }
 
   try {
-    await _waitForFinder(tester, finder);
+    final waitDuration = _parseWaitTimeMs(step);
+    await _waitForFinder(
+      tester,
+      finder,
+      timeout: waitDuration,
+    );
   } catch (e) {
     log("wait for finder failed: ${selector}");
     rethrow;
@@ -206,8 +231,8 @@ Future<void> _executeStep(
 
   switch (action.toLowerCase()) {
     case 'wait':
-      final waitTime = step['waitTime'] as int? ?? 1000;
-      await Future.delayed(Duration(milliseconds: waitTime));
+      final waitDuration = _parseWaitTimeMs(step, defaultMs: 1000);
+      await Future.delayed(waitDuration);
       await tester.pumpAndSettle();
       break;
 

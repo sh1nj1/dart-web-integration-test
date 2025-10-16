@@ -131,6 +131,8 @@ testCases:
         alias: account-input  # 이후 스텝에서 재사용할 별칭
 ```
 
+모든 스텝은 위젯 탐색 재시도 시간을 결정하는 `waitTime`을 설정할 수 있으며, 지정하지 않으면 기본값은 3000ms입니다.
+
 #### YAML Anchor 사용 (재사용 가능한 스텝)
 
 YAML anchor와 alias를 사용하여 반복되는 스텝을 재사용할 수 있습니다:

@@ -130,6 +130,8 @@ testCases:
         alias: account-input  # optional alias to reuse the resolved finder later
 ```
 
+Every step can supply `waitTime` to control how long widget lookups are retried (default 3000 ms if omitted).
+
 #### Using YAML anchors (reusable steps)
 
 Use YAML anchors and aliases to reuse repeated steps:
