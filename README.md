@@ -81,6 +81,37 @@ dart run bin/install_chromedriver.dart
 
 **Note**: When tests run, symbolic links to `integration_test/` and `test_driver/` are created and automatically removed when execution finishes.
 
+### Interactive mode (optional)
+
+If you want to keep the browser session alive and push additional suites dynamically, invoke `test.sh` with the interactive flags:
+
+```bash
+./test.sh test_dsl/sample_test.yaml \
+  --dart-define=DSL_INTERACTIVE=true \
+  --dart-define=DSL_SERVER_URL=http://127.0.0.1:9000/next
+```
+
+With `DSL_INTERACTIVE=true`, the initial generated suite still runs. After it finishes, the runner polls `DSL_SERVER_URL` every second for YAML or JSON payloads:
+- HTTP 200 with a non-empty body is treated as the next suite (a full `{name, testCases}` map, a list of test cases, or a single `{description, steps}` object).
+- Respond with the string `exit` (or override via `DSL_EXIT_COMMAND`) to end the session and let the test process exit.
+- Any other status code or empty response is ignored and retried on the next poll.
+
+Each dynamic payload is executed using the same DSL semantics, and the test process reports failure if any suite fails before the session ends.
+
+#### Quick local queue server
+
+For quick experiments you can serve prewritten DSL files with the helper script:
+
+```bash
+./test-queue-server.py test_dsl/sample_test.yaml
+# For multiple suites:
+./test-queue-server.py test_dsl/sample_test.yaml test_dsl/anchor_test.yaml
+# Automatically end the session after queued suites are consumed:
+./test-queue-server.py --exit test_dsl/sample_test.yaml
+```
+
+The server listens on `http://127.0.0.1:9000/next` by default and streams each file. With `--exit` it responds with `exit` after all files are consumed so the interactive session terminates automatically; otherwise it cycles through the queued files indefinitely so you can replay the same suites.
+
 ### Use with another Flutter app
 
 1. Add the `integration_test` dependency
@@ -90,6 +121,10 @@ dart run bin/install_chromedriver.dart
        sdk: flutter
      integration_test:
        sdk: flutter
+     http: ^1.1.0
+     path: ^1.8.3
+     yaml: ^3.1.2
+     glob: ^2.1.2
    ```
 
 2. **Add Keys to widgets**: Add identifiable keys to the widgets you want to test
