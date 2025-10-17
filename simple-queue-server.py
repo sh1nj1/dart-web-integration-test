@@ -142,6 +142,13 @@ def _build_handler(
             self.end_headers()
 
         def _handle_next(self) -> None:
+            user_agent = self.headers.get("User-Agent", "")
+            if "HeadlessChrome" in user_agent:
+                self.send_response(HTTPStatus.NO_CONTENT)
+                self._set_cors()
+                self.end_headers()
+                return
+
             try:
                 payload = items.get_nowait()
             except queue.Empty:
