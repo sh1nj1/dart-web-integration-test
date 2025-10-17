@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:yaml/yaml.dart';
 
 // Import generated test DSL data
 import 'test_dsl_data.dart';
@@ -21,6 +23,26 @@ void logData(String type, Map<String, dynamic> payload) =>
 
 final Map<String, Finder> _storedFinders = <String, Finder>{};
 
+const bool _enableInteractiveSession =
+    bool.fromEnvironment('DSL_INTERACTIVE', defaultValue: false);
+const String _interactiveServerUrl =
+    String.fromEnvironment('DSL_SERVER_URL', defaultValue: '');
+const Duration _interactivePollInterval = Duration(seconds: 1);
+const String _interactiveExitCommand =
+    String.fromEnvironment('DSL_EXIT_COMMAND', defaultValue: 'exit');
+
+class _SuiteResult {
+  const _SuiteResult({
+    required this.passed,
+    required this.failed,
+    required this.failedTests,
+  });
+
+  final int passed;
+  final int failed;
+  final List<String> failedTests;
+}
+
 /// Generic DSL test runner for Flutter integration tests
 ///
 /// This runner does not depend on any specific app implementation.
@@ -28,7 +50,7 @@ final Map<String, Finder> _storedFinders = <String, Finder>{};
 /// 1. Create app_config.dart from app_config.dart.template
 /// 2. Implement the startApp() function to launch your app
 void main() {
-  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Flutter Web Integration Test', () {
     late Map<String, dynamic> testSuite;
@@ -43,95 +65,26 @@ void main() {
       // Start the app using app-specific configuration
       await config.startApp(tester);
 
-      final testCases = testSuite['testCases'] as List;
-      int passed = 0;
-      int failed = 0;
-      final failedTests = <String>[];
-      String? currentFile;
+      final initialResult = await _runDslTestSuite(
+        tester,
+        testSuite,
+        suiteLabel: testSuite['name'] as String?,
+      );
 
-      for (final testCase in testCases) {
-        // Log when switching to a new source file
-        final sourceFile = testCase['_sourceFile'] as String?;
-        if (sourceFile != null && sourceFile != currentFile) {
-          currentFile = sourceFile;
-          log('\n${'=' * 60}');
-          log('Running tests from: $sourceFile');
-          log('=' * 60);
-          logData(DslLogEventType.sourceFile, {
-            'path': sourceFile,
-          });
-        }
+      var totalFailed = initialResult.failed;
+      final failedTests = <String>[...initialResult.failedTests];
 
-        final description = testCase['description'] as String;
-        log('Running test case: $description');
-        logData(DslLogEventType.testCaseStart, {
-          'description': description,
-          if (currentFile != null) 'sourceFile': currentFile,
-        });
-
-        try {
-          // Execute steps
-          final steps = testCase['steps'] as List;
-          for (int i = 0; i < steps.length; i++) {
-            final step = steps[i];
-            log('  Step ${i + 1}/${steps.length}: ${step['action']}');
-
-            try {
-              await _executeStep(tester, step);
-            } catch (e) {
-              // Log failure (screenshot disabled for web compatibility)
-              log('  ✗ Step failed: $e');
-              // TODO: Re-enable when WebDriver screenshot works on web
-              // await _captureScreenshot(binding, testCase['description'], 'step_${i + 1}_${step['action']}_failure');
-              rethrow;
-            }
-          }
-
-          log('✅ Test case "$description" passed');
-          logData(DslLogEventType.testCaseResult, {
-            'description': description,
-            'status': 'passed',
-            if (currentFile != null) 'sourceFile': currentFile,
-          });
-          passed++;
-        } catch (e) {
-          log('❌ Test case "$description" failed');
-          failed++;
-          failedTests.add(description);
-          logData(DslLogEventType.testCaseResult, {
-            'description': description,
-            'status': 'failed',
-            'reason': e.toString(),
-            if (currentFile != null) 'sourceFile': currentFile,
-          });
-        }
+      if (_enableInteractiveSession) {
+        final interactiveResult = await _runInteractiveSessions(tester);
+        totalFailed += interactiveResult.failed;
+        failedTests.addAll(interactiveResult.failedTests);
       }
 
-      // Print test summary
-      log('=' * 60);
-      log('TEST SUMMARY');
-      log('=' * 60);
-      log('Total: ${passed + failed}');
-      log('Passed: $passed');
-      log('Failed: $failed');
-      if (failedTests.isNotEmpty) {
-        log('');
-        log('Failed tests:');
-        for (final test in failedTests) {
-          log('  - $test');
-        }
-      }
-      log('=' * 60);
-
-      logData(DslLogEventType.summary, {
-        'passed': passed,
-        'failed': failed,
-        if (failedTests.isNotEmpty) 'failedTests': failedTests,
-      });
-
-      // Fail the test if any test case failed
-      if (failed > 0) {
-        fail('$failed test case(s) failed');
+      if (totalFailed > 0) {
+        final summaryNames = failedTests.toSet().toList();
+        final joined =
+            summaryNames.isEmpty ? '' : ': ${summaryNames.join(', ')}';
+        fail('$totalFailed test case(s) failed$joined');
       }
     });
   });
@@ -271,9 +224,8 @@ Future<void> _clickElement(
 Future<void> _typeText(WidgetTester tester, Map<String, dynamic> step) async {
   final value = step['value'] as String;
   final selector = step['selector'] as String?;
-  final fallback = selector == null || selector.isEmpty
-      ? find.byType(TextFormField)
-      : null;
+  final fallback =
+      selector == null || selector.isEmpty ? find.byType(TextFormField) : null;
 
   final finder = await _obtainFinder(tester, step, fallback: fallback);
   await tester.enterText(finder.first, value);
@@ -283,16 +235,14 @@ Future<void> _assertText(WidgetTester tester, Map<String, dynamic> step) async {
   final expected = step['expected'] as String;
   final selector = step['selector'] as String?;
 
-  final fallback = selector == null || selector.isEmpty
-      ? find.text(expected)
-      : null;
+  final fallback =
+      selector == null || selector.isEmpty ? find.text(expected) : null;
 
   final finder = await _obtainFinder(tester, step, fallback: fallback);
 
   // Verify text content if a specific element was selected
-  final hasSpecificTarget =
-      (selector != null && selector.isNotEmpty) ||
-          ((step['alias'] as String?)?.isNotEmpty ?? false);
+  final hasSpecificTarget = (selector != null && selector.isNotEmpty) ||
+      ((step['alias'] as String?)?.isNotEmpty ?? false);
 
   if (hasSpecificTarget) {
     final element = finder.evaluate().first;
@@ -304,6 +254,326 @@ Future<void> _assertText(WidgetTester tester, Map<String, dynamic> step) async {
 Future<void> _assertVisible(
     WidgetTester tester, Map<String, dynamic> step) async {
   final finder = await _obtainFinder(tester, step);
+}
+
+Future<_SuiteResult> _runDslTestSuite(
+  WidgetTester tester,
+  Map<String, dynamic> testSuite, {
+  String? suiteLabel,
+  String? defaultSourceFile,
+}) async {
+  final suiteName =
+      suiteLabel ?? testSuite['name'] as String? ?? 'Dynamic Suite';
+  final rawTestCases = (testSuite['testCases'] as List?) ?? const [];
+  int passed = 0;
+  int failed = 0;
+  final failedTests = <String>[];
+  String? currentFile;
+  final fallbackSource =
+      defaultSourceFile ?? testSuite['_source'] as String? ?? suiteName;
+
+  for (int index = 0; index < rawTestCases.length; index++) {
+    final rawCase = rawTestCases[index];
+    if (rawCase is! Map) {
+      final label = 'Test case #${index + 1}';
+      log('❌ $label is not a map. Skipping.');
+      failed++;
+      failedTests.add(label);
+      continue;
+    }
+
+    final testCase =
+        Map<String, dynamic>.from(rawCase as Map<Object?, Object?>);
+    final sourceFile =
+        (testCase['_sourceFile'] as String?) ?? fallbackSource ?? suiteName;
+    if (sourceFile != null && sourceFile != currentFile) {
+      currentFile = sourceFile;
+      log('\n${'=' * 60}');
+      log('Running tests from: $sourceFile');
+      log('=' * 60);
+      logData(DslLogEventType.sourceFile, {
+        'path': sourceFile,
+      });
+    }
+
+    final description =
+        (testCase['description'] as String?) ?? 'Test case ${index + 1}';
+    log('Running test case: $description');
+    logData(DslLogEventType.testCaseStart, {
+      'description': description,
+      if (currentFile != null) 'sourceFile': currentFile,
+    });
+
+    try {
+      final rawSteps = (testCase['steps'] as List?) ?? const [];
+      for (int stepIndex = 0; stepIndex < rawSteps.length; stepIndex++) {
+        final rawStep = rawSteps[stepIndex];
+        if (rawStep is! Map) {
+          log('  ⚠️ Step ${stepIndex + 1} has unexpected format (${rawStep.runtimeType}). Skipping.');
+          continue;
+        }
+
+        final step =
+            Map<String, dynamic>.from(rawStep as Map<Object?, Object?>);
+        log('  Step ${stepIndex + 1}/${rawSteps.length}: ${step['action']}');
+
+        try {
+          await _executeStep(tester, step);
+        } catch (e) {
+          log('  ✗ Step failed: $e');
+          rethrow;
+        }
+      }
+
+      log('✅ Test case "$description" passed');
+      logData(DslLogEventType.testCaseResult, {
+        'description': description,
+        'status': 'passed',
+        if (currentFile != null) 'sourceFile': currentFile,
+      });
+      passed++;
+    } catch (e, stackTrace) {
+      log('❌ Test case "$description" failed');
+      if (kDebugMode) {
+        log('  Debug: $e');
+        log('  Stack trace: $stackTrace');
+      }
+      failed++;
+      failedTests.add(description);
+      logData(DslLogEventType.testCaseResult, {
+        'description': description,
+        'status': 'failed',
+        'reason': e.toString(),
+        if (currentFile != null) 'sourceFile': currentFile,
+      });
+    }
+  }
+
+  log('=' * 60);
+  log('TEST SUMMARY ($suiteName)');
+  log('=' * 60);
+  log('Total: ${passed + failed}');
+  log('Passed: $passed');
+  log('Failed: $failed');
+  if (failedTests.isNotEmpty) {
+    log('');
+    log('Failed tests:');
+    for (final test in failedTests) {
+      log('  - $test');
+    }
+  }
+  log('=' * 60);
+
+  logData(DslLogEventType.summary, {
+    'passed': passed,
+    'failed': failed,
+    if (failedTests.isNotEmpty) 'failedTests': failedTests,
+  });
+
+  return _SuiteResult(
+    passed: passed,
+    failed: failed,
+    failedTests: failedTests,
+  );
+}
+
+Future<_SuiteResult> _runInteractiveSessions(WidgetTester tester) async {
+  if (_interactiveServerUrl.isEmpty) {
+    log('Interactive session enabled but DSL_SERVER_URL is not set. Skipping dynamic test listener.');
+    return const _SuiteResult(
+      passed: 0,
+      failed: 0,
+      failedTests: <String>[],
+    );
+  }
+
+  log('\n${'=' * 60}');
+  log('Interactive DSL session enabled. Waiting for dynamic test suites...');
+  log('Server endpoint: $_interactiveServerUrl');
+  log('Send "$_interactiveExitCommand" to terminate the session.');
+  log('=' * 60);
+
+  final client = http.Client();
+  int suiteIndex = 1;
+  int passed = 0;
+  int failed = 0;
+  final failedTests = <String>[];
+
+  try {
+    while (true) {
+      final payload = await _fetchDynamicSuite(client);
+      if (payload == null) {
+        await Future.delayed(_interactivePollInterval);
+        continue;
+      }
+
+      if (payload.shouldExit) {
+        log('Received exit command. Ending interactive session.');
+        break;
+      }
+
+      Map<String, dynamic> suite;
+      try {
+        suite = _prepareDynamicSuite(payload.suite!, suiteIndex);
+      } catch (e) {
+        log('Failed to prepare dynamic suite #$suiteIndex: $e');
+        continue;
+      }
+      log('\n${'=' * 60}');
+      log('Running dynamic suite #$suiteIndex: ${suite['name']}');
+      log('=' * 60);
+
+      _storedFinders.clear();
+      final result = await _runDslTestSuite(
+        tester,
+        suite,
+        suiteLabel: suite['name'] as String?,
+        defaultSourceFile: suite['_source'] as String?,
+      );
+      passed += result.passed;
+      failed += result.failed;
+      failedTests.addAll(result.failedTests);
+
+      suiteIndex++;
+      await tester.pumpAndSettle();
+    }
+  } finally {
+    client.close();
+    _storedFinders.clear();
+  }
+
+  log('\nInteractive session summary: passed $passed, failed $failed');
+
+  return _SuiteResult(
+    passed: passed,
+    failed: failed,
+    failedTests: failedTests,
+  );
+}
+
+Future<_DynamicSuitePayload?> _fetchDynamicSuite(http.Client client) async {
+  try {
+    final uri = Uri.parse(_interactiveServerUrl);
+    final response = await client.get(uri);
+
+    if (response.statusCode == 204) {
+      return null;
+    }
+
+    if (response.statusCode != 200) {
+      log('Dynamic DSL server responded with status ${response.statusCode}. Retrying...');
+      return null;
+    }
+
+    final payload = response.body.trim();
+    if (payload.isEmpty) {
+      return null;
+    }
+
+    if (payload.toLowerCase() == _interactiveExitCommand.toLowerCase()) {
+      return const _DynamicSuitePayload.exit();
+    }
+
+    final suite = _decodeDslPayload(payload);
+    return _DynamicSuitePayload.data(suite);
+  } catch (e, stackTrace) {
+    log('Failed to fetch dynamic test suite: $e');
+    if (kDebugMode) {
+      log('  Stack trace: $stackTrace');
+    }
+    return null;
+  }
+}
+
+Map<String, dynamic> _prepareDynamicSuite(
+    Map<String, dynamic> suite, int suiteIndex) {
+  final prepared = Map<String, dynamic>.from(suite);
+  prepared['name'] ??= 'Dynamic Suite $suiteIndex';
+  prepared['_source'] ??= 'dynamic_suite_$suiteIndex';
+
+  final rawCases = (prepared['testCases'] as List?) ?? const [];
+  final normalizedCases = <Map<String, dynamic>>[];
+  for (int index = 0; index < rawCases.length; index++) {
+    final rawCase = rawCases[index];
+    if (rawCase is! Map) {
+      throw FormatException(
+          'Dynamic suite test case at index $index is not a map (${rawCase.runtimeType}).');
+    }
+    final caseMap = Map<String, dynamic>.from(rawCase as Map<Object?, Object?>);
+    caseMap['_sourceFile'] ??= prepared['_source'];
+    normalizedCases.add(caseMap);
+  }
+
+  prepared['testCases'] = normalizedCases;
+  return prepared;
+}
+
+Map<String, dynamic> _decodeDslPayload(String payload) {
+  final trimmed = payload.trim();
+  dynamic decoded;
+
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    decoded = jsonDecode(trimmed);
+  } else {
+    decoded = loadYaml(trimmed);
+  }
+
+  if (decoded is YamlMap || decoded is YamlList) {
+    decoded = jsonDecode(jsonEncode(decoded));
+  }
+
+  if (decoded is List) {
+    return {
+      'name': 'Dynamic Suite',
+      'testCases': decoded,
+    };
+  }
+
+  if (decoded is Map) {
+    final map = Map<String, dynamic>.from(decoded as Map<Object?, Object?>);
+    map['name'] ??= 'Dynamic Suite';
+
+    if (!map.containsKey('testCases')) {
+      if (map.containsKey('steps')) {
+        final suiteName = map['name'] as String? ?? 'Dynamic Suite';
+        final testCase =
+            Map<String, dynamic>.from(map as Map<Object?, Object?>);
+        testCase.remove('testCases');
+        testCase.remove('_source');
+        testCase.remove('name');
+        return {
+          'name': suiteName,
+          'testCases': [testCase],
+        };
+      }
+      throw FormatException('Dynamic suite is missing "testCases".');
+    }
+
+    final rawCases = map['testCases'];
+    if (rawCases is! List) {
+      throw FormatException('Dynamic suite "testCases" must be a list.');
+    }
+
+    map['testCases'] = rawCases
+        .map<Map<String, dynamic>>(
+            (caseData) => Map<String, dynamic>.from(caseData as Map))
+        .toList();
+
+    return map;
+  }
+
+  throw FormatException(
+      'Unsupported dynamic suite payload type: ${decoded.runtimeType}');
+}
+
+class _DynamicSuitePayload {
+  const _DynamicSuitePayload.data(this.suite) : shouldExit = false;
+  const _DynamicSuitePayload.exit()
+      : suite = null,
+        shouldExit = true;
+
+  final Map<String, dynamic>? suite;
+  final bool shouldExit;
 }
 
 /// Parse a selector string and return a Finder
@@ -346,7 +616,8 @@ Finder _parseFinder(WidgetTester tester, String selector) {
       case 'alias':
         final cachedFinder = _storedFinders[selectorValue];
         if (cachedFinder == null) {
-          throw Exception('Finder alias "$selectorValue" has not been registered yet.');
+          throw Exception(
+              'Finder alias "$selectorValue" has not been registered yet.');
         }
         finder = cachedFinder;
         break;

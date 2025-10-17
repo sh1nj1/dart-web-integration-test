@@ -81,6 +81,37 @@ dart run bin/install_chromedriver.dart
 
 **참고**: 테스트 실행 시 `integration_test/`와 `test_driver/` 디렉토리에 대한 심볼릭 링크가 생성되고, 테스트 완료 후 자동으로 삭제됩니다.
 
+### 인터랙티브 모드 (선택 사항)
+
+브라우저 세션을 유지한 채로 추가 테스트 스위트를 동적으로 실행하려면 다음처럼 `test.sh`에 옵션을 넘깁니다:
+
+```bash
+./test.sh test_dsl/sample_test.yaml \
+  --dart-define=DSL_INTERACTIVE=true \
+  --dart-define=DSL_SERVER_URL=http://127.0.0.1:9000/next
+```
+
+`DSL_INTERACTIVE=true`가 설정되면 기존에 생성된 스위트를 먼저 실행한 뒤, `DSL_SERVER_URL`을 1초마다 폴링하여 YAML 또는 JSON 문자열을 가져옵니다.
+- HTTP 200 응답 + 본문이 있으면 다음 테스트 스위트로 간주합니다 (`{name, testCases}` 구조, 테스트 케이스 리스트, 혹은 `{description, steps}` 단일 케이스 모두 허용).
+- 문자열 `exit`(또는 `DSL_EXIT_COMMAND`로 변경 가능)을 반환하면 세션을 종료하고 테스트 프로세스가 종료됩니다.
+- 다른 상태 코드나 빈 응답은 무시되고 다음 폴링에서 재시도합니다.
+
+동적으로 전달된 스위트도 동일한 DSL 규칙을 따르며, 세션 중 실패가 발생하면 테스트가 실패 상태로 종료됩니다.
+
+#### 로컬 큐 서버 빠르게 실행하기
+
+미리 작성한 DSL 파일을 제공하려면 보조 스크립트를 사용할 수 있습니다:
+
+```bash
+./test-queue-server.py test_dsl/sample_test.yaml
+# 여러 스위트를 순서대로 제공하기
+./test-queue-server.py test_dsl/sample_test.yaml test_dsl/anchor_test.yaml
+# 모든 스위트가 끝나면 자동으로 종료시키기
+./test-queue-server.py --exit test_dsl/sample_test.yaml
+```
+
+기본값으로 `http://127.0.0.1:9000/next` 에서 대기하며, 큐에 넣은 파일을 순서대로 반환합니다. `--exit` 옵션을 사용하면 모든 파일이 소비된 뒤 `exit` 문자열로 응답하여 인터랙티브 세션을 자동 종료하고, 옵션을 생략하면 큐를 계속 반복하면서 동일한 스위트를 다시 제공할 수 있습니다.
+
 ### 다른 Flutter 앱에서 사용하기
 
 1. add integration_test dependency
@@ -90,6 +121,10 @@ dart run bin/install_chromedriver.dart
        sdk: flutter
      integration_test:
        sdk: flutter
+     http: ^1.1.0
+     path: ^1.8.3
+     yaml: ^3.1.2
+     glob: ^2.1.2
    ```
 
 2. **위젯에 Key 추가**: 테스트할 위젯에 식별 가능한 Key 추가
